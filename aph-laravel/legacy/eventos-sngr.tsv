@@ -1,0 +1,119 @@
+EFC	Enfermedad de cultivos
+PLG	Plaga
+EPD	Epidemia
+PDM	Pandemia
+EPZ	Epizootia
+ZOO	Zoonosis
+CDM	Caída de meteorito
+TRS	Tormenta de radiación solar
+ALU	Aluvión (Flujos)
+FLD	Flujo de detritos	ALU
+FLL	Flujo de lodo	ALU
+AVA	Avalancha
+AVD	Avalancha de detritos	AVA
+AVL	Avalancha de lodo	AVA
+AVN	Avalancha de nieve	AVA
+CAD	Caídas (Colapso)
+CRC	Caída de roca	CAD
+CSU	Caída de suelo (no consolidado)	CAD
+DES	Deslizamiento
+DRT	Deslizamiento rotacional	DES
+DTR	Deslizamiento traslacional	DES
+HUN	Hundimiento
+HSB	Hundimiento súbito	HUN
+SUB	Subsidencia	HUN
+REP	Reptación
+SIS	Sismo
+SCT	Sismo cortical (falla geológica)	SIS
+SSB	Sismo de subducción (placas)	SIS
+SVL	Sismo volcánico	SIS
+ERV	Erupción volcánica
+AES	Avalancha de escombros	ERV
+CCZ	Caída de ceniza	ERV
+FLV	Flujos de lava	ERV
+FPC	Flujos piroclásticos	ERV
+GVC	Gases volcánicos	ERV
+LHR	Lahares	ERV
+OPA	Ondas de presión atmosférica	ERV
+DFH	Déficit hídrico
+EHD	Erosión hídrica
+EXH	Exceso de humedad
+INU	Inundación
+ICT	Inundación costera	INU
+IFL	Inundación fluvial	INU
+ILC	Inundación lacustre	INU
+IPL	Inundación pluvial	INU
+EEO	Erosión eólica
+GRA	Granizada
+HEL	Helada
+LLI	Lluvias intensas
+NEV	Nevada
+OCA	Ola de calor
+OFR	Ola de frío
+SEQ	Sequía
+SAG	Sequía agrícola	SEQ
+SHD	Sequía hidrológica	SEQ
+SMT	Sequía meteorológica	SEQ
+SSE	Sequía socioeconómica	SEQ
+TOR	Torbellino (Remolino de viento)
+TOE	Tormenta eléctrica
+TRM	Tromba marina
+VDV	Vendaval
+RES	Corrientes de resaca
+ECO	Erosión Costera
+OLJ	Oleaje
+OLE	Oleaje extremo	OLJ
+OLN	Oleaje normal	OLJ
+RDM	Remolino de mar
+TSU	Tsunami
+TLC	Tsunami local	TSU
+TRG	Tsunami regional	TSU
+TLJ	Tsunami lejano	TSU
+COS	Conmoción social
+CMH	Crisis de movilidad humana
+DEM	Disturbios en eventos masivos
+CQM	Contaminación química
+CAT	Contaminación atmosférica	CQM
+CAC	Contaminación de acuíferos	CQM
+CAG	Contaminación de agua	CQM
+CSL	Contaminación de suelo	CQM
+CMC	Contaminación marina y costera	CQM
+CRL	Contaminación de relaves
+CRD	Contaminación radiactiva
+DGA	Degradación del agua
+DGS	Degradación del suelo
+DTF	Desertificación
+SLA	Salinización del agua
+SLS	Salinización del suelo
+INE	Incendio estructural
+ITF	Incendio de interfase
+INF	Incendio forestal
+IID	Incendio industrial
+IRS	Incendios en vertederos o en rellenos sanitarios
+ACA	Accidente aéreo
+AAN	Accidente de aeronave	ACA
+AEP	Accidente espacial	ACA
+AMA	Accidente en medios acuáticos
+NAT	Accidente industrial (NATECH)
+ACM	Accidente minero
+AMT	Accidente masivo de transporte terrestre
+AFR	Accidente ferroviario	AMT
+DEE	Desechos espaciales
+ITM	Intoxicación masiva
+ATB	Ataque biológico
+ATN	Ataque nuclear
+ATQ	Ataque químico
+ATR	Ataque radiológico
+ATC	Ataque cibernético
+COI	Colapso en infraestructura
+CES	Colapso en elementos estructurales	COI
+CNE	Colapso en elementos no estructurales	COI
+EXP	Explosión
+GLP	Explosión por GLP	EXP
+MTP	Explosión por MATPEL	EXP
+PTN	Explosión por pirotecnia	EXP
+ATT	Explosión por atentado	EXP
+FSE	Fallo generalizado de servicios esenciales
+CSA	Corte generalizado del servicio de agua	FSE
+CEE	Corte generalizado de energía eléctrica	FSE
+CGT	Corte generalizado de telecomunicaciones	FSE

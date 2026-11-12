@@ -1,0 +1,19 @@
+
+.tools/
+tmp/
+aph-laravel/vendor/
+aph-laravel/.env
+aph-web/data/
+
+# Original matrices, exports and the superseded local pilot stay private.
+/01 BD APH/
+/output/
+/aph-web/
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.sql
+*.encrypted
+*cuentas-provinciales*
+*superadministrador-laravel*
