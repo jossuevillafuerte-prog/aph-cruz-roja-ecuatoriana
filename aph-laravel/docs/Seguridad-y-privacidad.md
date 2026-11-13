@@ -20,7 +20,7 @@ Se importaron 24 cuentas provinciales, 1 operador, 6 recursos, 101 fichas, 101 r
 - Al vencer la sesión se oculta la pantalla. No se ha implementado autoguardado de formularios: los cambios sin guardar pueden perderse; se muestra aviso previo.
 - Sesiones en MySQL, sin Recordarme, cookie HttpOnly, SameSite=Strict, caducidad al cerrar el navegador y rotación del ID al autenticar y confirmar el segundo factor.
 - El cierre se hace por POST con CSRF, invalida la sesión del servidor y renueva el token. Las otras pestañas reciben el aviso. Cambiar la contraseña revoca las demás sesiones; la revisión de credenciales rechaza también sesiones de cuentas desactivadas o restablecidas. Existe cierre de todas las sesiones con confirmación de contraseña.
-- Respuestas privadas no-store, denegación de enmarcado, nosniff y no-referrer. Se registra autenticación, fallos, vencimiento, cierres, operaciones de escritura e impresión/exportación. Las contraseñas, secretos y contenido clínico no se copian al registro de seguridad.
+- Respuestas privadas no-store, denegación de enmarcado, nosniff y Referrer-Policy strict-origin (actualización del 13 de noviembre de 2026: identifica únicamente el origen ante el proveedor cartográfico, sin rutas ni parámetros clínicos). Se registra autenticación, fallos, vencimiento, cierres, operaciones de escritura e impresión/exportación. Las contraseñas, secretos y contenido clínico no se copian al registro de seguridad.
 - Todas las pantallas y exportaciones requieren autenticación y segundo factor. Los datos se filtran por provincia en el servidor.
 
 ## Excepción de contraseña corta

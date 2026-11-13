@@ -40,7 +40,7 @@ $printGroups = [
             ?>
         <section class="report-map-block"><h2><?= h($title) ?></h2><p><?= h($data[$field] ?: 'Dirección sin registrar') ?></p>
         <?php if ($valid) { ?>
-        <div class="report-static-map" data-lat="<?= h($lat) ?>" data-lon="<?= h($lon) ?>" data-tiles="<?= h(getenv('APH_MAP_TILES') ?: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png') ?>"><p class="map-placeholder">Preparando mapa…</p><img hidden alt="<?= h($title) ?>: punto de referencia marcado"></div>
+        <div class="report-static-map" data-lat="<?= h($lat) ?>" data-lon="<?= h($lon) ?>" data-tiles="<?= h(config('maps.tiles')) ?>"><p class="map-placeholder">Preparando mapa…</p><img hidden alt="<?= h($title) ?>: punto de referencia marcado"></div>
         <p class="map-caption">Latitud <?= h($lat) ?> · Longitud <?= h($lon) ?> · WGS84 · © OpenStreetMap contributors</p>
         <?php } else { ?><p class="map-missing">No hay coordenadas registradas para esta ubicación.</p><?php } ?>
         </section>

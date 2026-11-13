@@ -31,7 +31,7 @@ foreach ($query as $row) {
 <div class="dashboard-breakdowns">
 <?php foreach (['evento' => 'Mapa de direcciones del evento', 'destino' => 'Mapa de localidades de destino'] as $key => $title) { ?>
 <section class="card map-card"><h2><?= h($title) ?></h2><p class="heading-description" id="map-count-<?= $key ?>"></p>
-<div class="dashboard-map" data-location="<?= $key ?>" data-tiles="<?= h(getenv('APH_MAP_TILES') ?: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png') ?>" data-attribution="<?= h(getenv('APH_MAP_ATTRIBUTION') ?: '© OpenStreetMap contributors') ?>" aria-label="<?= h($title) ?>"></div></section>
+<div class="dashboard-map" data-location="<?= $key ?>" data-tiles="<?= h(config('maps.tiles')) ?>" data-attribution="<?= h(config('maps.attribution')) ?>" aria-label="<?= h($title) ?>"></div></section>
 <?php } ?>
 </div>
 <?php if (auth()->user()->role === 'superadmin') { ?>

@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Rules\InstitutionalEmail;
+use App\Security\PasswordPolicy;
 use App\Security\Security;
 use App\Services\AccountInvitations;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UsersController extends Controller
 {
@@ -76,20 +78,70 @@ class UsersController extends Controller
         } elseif ($action === 'edit') {
             $email = strtolower(trim((string) $r->input('email')));
             $r->merge(['email' => $email ?: null]);
-            $v = $r->validate(['name' => 'required|string|max:200', 'email' => [$account->legacy_access ? 'nullable' : 'required', 'max:254', new InstitutionalEmail, Rule::unique('accounts', 'email')->ignore($id)]]);
-            // Temporary grandfathered access is preserved; email is never marked verified here.
-            $changed = ($v['email'] ?? null) !== $account->email;
-            if ($changed) {
-                $v['email_verified_at'] = null;
-                if (! $account->legacy_access) {
-                    $v['active'] = false;
-                }
+            $v = $r->validate([
+                'first_name' => 'required|string|max:100',
+                'last_name' => 'nullable|string|max:100',
+                'email' => [$account->legacy_access ? 'nullable' : 'required', 'max:254', new InstitutionalEmail, Rule::unique('accounts', 'email')->ignore($id)],
+                'password' => ['nullable', 'string', 'max:72', function ($attribute, $value, $fail) {
+                    if (! PasswordPolicy::accepts($value)) {
+                        $fail(PasswordPolicy::DESCRIPTION);
+                    }
+                }],
+                'role' => ['required', Rule::in(['technician', 'superadmin'])],
+                'province' => ['required_if:role,technician', 'nullable', Rule::in(array_keys($this->provinces()))],
+            ]);
+            if ((string) $id === (string) $r->user()->id && $v['role'] !== 'superadmin') {
+                throw ValidationException::withMessages(['role' => 'No puedes quitarte el acceso de superadministrador.']);
             }
-            DB::transaction(function () use ($id, $v, $changed) {
+            $v['name'] = trim($v['first_name'].' '.($v['last_name'] ?? ''));
+            if (mb_strlen($v['name']) > 200) {
+                throw ValidationException::withMessages(['first_name' => 'El nombre completo admite hasta 200 caracteres.']);
+            }
+            $v['province'] = $v['role'] === 'superadmin' ? null : $v['province'];
+            if (! empty($v['password'])) {
+                $v['password'] = password_hash($v['password'], PASSWORD_BCRYPT);
+            } else {
+                unset($v['password']);
+            }
+            DB::transaction(function () use ($id, $v) {
+                $current = DB::table('accounts')->where('id', $id)->lockForUpdate()->first();
+                $emailChanged = ($v['email'] ?? null) !== $current->email;
+                $identityChanged = $v['province'] !== $current->province || $v['role'] !== $current->role;
+                if ($emailChanged) {
+                    $v['email_verified_at'] = null;
+                    if (! $current->legacy_access) {
+                        $v['active'] = false;
+                    }
+                }
+                $active = $v['active'] ?? $current->active;
+                if ($current->operator_id && $identityChanged) {
+                    DB::table('operadores')->where('id', $current->operator_id)->update(['activo' => false]);
+                }
+                if ($v['role'] === 'technician') {
+                    // Create/reuse a provincial identity without moving historical fichas.
+                    $operator = DB::table('operadores')->where('provincia', $v['province'])->where('usuario', $current->username)->first();
+                    $operatorValues = ['nombre' => $v['name'], 'clave' => $v['password'] ?? $current->password, 'activo' => $active, 'perfil' => 'Técnico provincial APH'];
+                    if ($operator) {
+                        DB::table('operadores')->where('id', $operator->id)->update($operatorValues);
+                        $v['operator_id'] = $operator->id;
+                    } else {
+                        $v['operator_id'] = DB::table('operadores')->insertGetId($operatorValues + ['provincia' => $v['province'], 'usuario' => $current->username, 'revision' => 0]);
+                    }
+                } else {
+                    $v['operator_id'] = null;
+                }
+                $oldProfile = DB::table('perfiles')->where('provincia', $current->province ?? 'nacional')->where('usuario', $current->username)->first();
+                if ($oldProfile) {
+                    DB::table('perfiles')->updateOrInsert(['provincia' => $v['province'] ?? 'nacional', 'usuario' => $current->username], ['nombre' => $v['name'], 'imagen' => $oldProfile->imagen, 'imagen_tipo' => $oldProfile->imagen_tipo]);
+                }
                 DB::table('accounts')->where('id', $id)->update($v + ['updated_at' => now(), 'revision' => DB::raw('revision+1')]);
                 DB::table('sessions')->where('user_id', (string) $id)->delete();
-                if ($changed) {
-                    DB::table('account_invitations')->where('account_id', $id)->delete();
+                DB::table('account_invitations')->where('account_id', $id)->delete();
+                if ($identityChanged) {
+                    Security::event('account_permissions_changed', null, 'account:'.$id);
+                }
+                if (isset($v['password'])) {
+                    Security::event('account_password_reset', null, 'account:'.$id);
                 }
             });
             Security::event('account_updated', null, 'account:'.$id);

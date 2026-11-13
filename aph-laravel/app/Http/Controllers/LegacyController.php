@@ -42,6 +42,21 @@ class LegacyController extends Controller
         }
         abort_unless($nationalProfile || isset($provinces[$scope ?? '']), 403);
         $request->attributes->set('scope_province', $scope);
+        $returnState = $request->query('return_estado', '');
+        $returnState = in_array($returnState, ['Pendiente', 'Cerrada'], true) ? $returnState : '';
+        $context = ['return_estado' => $returnState];
+        $backQuery = ['vista' => 'atenciones', 'estado' => $returnState];
+        $backPath = '/';
+        if ($user->role === 'superadmin') {
+            $returnProvince = $request->query('return_province', $scope) ?? '';
+            $returnProvince = is_string($returnProvince) && isset($provinces[$returnProvince]) ? $returnProvince : '';
+            $returnPage = filter_var($request->query('return_page', 1), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
+            $context += ['return_province' => $returnProvince, 'return_page' => $returnPage];
+            $backPath = '/national';
+            $backQuery = ['view' => 'atenciones', 'province' => $returnProvince, 'estado' => $returnState, 'page' => $returnPage];
+        }
+        $request->attributes->set('attention_back_url', $backPath.'?'.http_build_query($backQuery));
+        $request->attributes->set('attention_return_context', http_build_query($context));
         // No second PHP session or publicly reachable legacy entry point.
         $transport = new LegacyTransport;
         app()->instance(LegacyTransport::class, $transport);

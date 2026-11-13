@@ -1,6 +1,6 @@
 # Roles nacionales y activación institucional
 
-Actualización: 11 de noviembre de 2026. Sustituye la política de roles y segundo factor anterior.
+Actualización: 13 de noviembre de 2026. Sustituye la política de roles y segundo factor anterior.
 
 ## Decisiones confirmadas
 
@@ -22,7 +22,7 @@ Las cuentas migradas y la cuenta nacional tienen una excepción temporal legacy_
 
 Acceso exclusivo del superadministrador. Muestra nombre, usuario, rol, provincia, correo, verificación, estado activo/inactivo y último ingreso. Permite buscar, filtrar, crear técnicos, editar nombre/correo, activar/desactivar y reenviar invitaciones. No permite desactivar la propia cuenta nacional. La desactivación revoca sesiones y códigos pendientes. Los cambios administrativos quedan auditados.
 
-La provincia se asigna al crear la cuenta; la reasignación de un técnico con historial a otra provincia no se implementa en esta entrega para preservar sus vínculos. Los correos se validan contra la lista exacta confirmada. No se derivan permisos automáticamente del dominio.
+La provincia y el rol se pueden editar por el superadministrador. Una reasignación crea o reutiliza la identidad operativa de destino, conserva las fichas y responsables históricos y revoca las sesiones anteriores. El administrador no puede quitarse su propio rol. El modal permite editar nombre, apellido, correo y contraseña opcional; una contraseña vacía conserva la actual. Los nombres existentes se conservan completos, sin separar apellidos automáticamente. Los correos se validan contra la lista exacta confirmada. No se derivan permisos automáticamente del dominio.
 
 ## Dominios confirmados
 
@@ -41,3 +41,11 @@ Aplicación local: http://127.0.0.1:8090/login. En producción se requiere HTTPS
 Se creó una copia cifrada de MySQL antes de cambiar identidades. No se alteraron las fichas, recursos ni su historial. La migración agregó cuentas y vínculos de operadores para las cuentas provinciales. Para revertir identidades debe restaurarse una copia verificada; no se realiza un rollback destructivo automático.
 
 Se mantienen las referencias ISO 27799:2025, ISO/IEC 27001 y 27701 y las obligaciones de privacidad documentadas anteriormente. Cambiar autenticación no resuelve las tareas pendientes de TLS institucional, cifrado del almacenamiento, respaldos, retención y gobierno de datos médicos.
+
+## Mapas y navegación (13 de noviembre de 2026)
+
+El acceso a Seguridad se muestra solamente en el menú de Mi perfil. Cerrar sesión permanece en todos los encabezados. Los botones provinciales conservan el orden alfabético y el foco al filtrar.
+
+Los mapas utilizan Leaflet y OpenStreetMap, sin API key. Se detectó que no-referrer suprimía el Referer que exige la política del proveedor (https://operations.osmfoundation.org/policies/tiles/). Se sustituyó por strict-origin; en la verificación del navegador los tiles respondieron HTTP 200 y recibieron únicamente http://127.0.0.1:8090/. El bloqueo reportado no se reprodujo de forma constante: también se recibieron imágenes antes del cambio. No se identificó un rechazo por CORS, X-Frame-Options o CSP de la aplicación.
+
+APH_MAP_TILES y APH_MAP_ATTRIBUTION se leen desde config/maps.php, compatible con config:cache. En producción se requiere HTTPS; cualquier CSP impuesta por el alojamiento debe permitir el origen del proveedor en img-src. La disponibilidad del servicio cartográfico externo no está garantizada por esta configuración. No se envían identificadores de fichas en el Referer.

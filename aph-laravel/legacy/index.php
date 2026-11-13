@@ -224,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (! $errors) {
             try {
                 $id = save($db, $province, $record ?: null, $data, $nextState, $reason ?: 'Registro de prueba', $resourceId, $account, $responsibleId);
-                aphHeader('Location: ?id='.$id.'&guardado=1', true, 303);
+                aphHeader('Location: ?id='.$id.'&guardado=1&'.$request->attributes->get('attention_return_context'), true, 303);
                 aphExit();
             } catch (DomainException $error) {
                 $errors[] = $error->getMessage();
@@ -255,6 +255,9 @@ $navigation = [
     ['ambulance', $isAdmin ? '/?vista=recursos&select_province=1' : '?vista=recursos', 'Recursos', $resourceView],
     ['profile', '?vista=perfil', 'Mi perfil', $profileView],
 ];
+if ($profileView) {
+    $navigation[] = ['check', '/security', 'Seguridad', false];
+}
 if ($isAdmin) {
     $navigation[] = ['team', '/users', 'Usuarios nacionales', false];
 }
@@ -285,7 +288,7 @@ if ($isAdmin) {
         <button type="button" id="menu-open" class="icon-button" aria-label="Abrir menú" aria-controls="app-menu" aria-expanded="false"><?= icon('menu') ?></button>
         <a class="identity" href="<?= $isAdmin ? '/national' : '/' ?>"><img src="marca/cre-institucional.png" alt="Cruz Roja Ecuatoriana"><span>Registro APH</span></a>
     </div>
-    <div class="header-tools"><a class="button" href="/security">Seguridad</a>
+    <div class="header-tools">
         <span class="province-chip"><?= icon('pin') ?> <?= h($territory['nombre']) ?></span>
         <a class="profile-link" href="?vista=perfil" <?= $profileView ? 'aria-current="page"' : '' ?>>
             <?= accountAvatar($account) ?>
@@ -310,9 +313,12 @@ if ($isAdmin) {
         <button class="danger"><?= icon('exit') ?> Cerrar sesión</button>
     </form>
 </dialog>
-<main>
+<main class="module-page">
+<?php if (! $dashboardView && ! $printView) {
+    $editingAttention = $record && ! $deleteView && ! $resourceView && ! $profileView;
+    ?><a class="button back-link emphasis" href="<?= h($editingAttention ? $request->attributes->get('attention_back_url') : ($isAdmin ? '/national' : '/')) ?>"><?= icon('back') ?> <?= $editingAttention ? 'Volver a atenciones' : 'Volver al panel principal' ?></a><?php } ?>
 
-<p class="notice">Entorno de prueba. Usa únicamente datos ficticios.</p>
+
 <?php if ($dashboardView) { ?>
     <?php require __DIR__.'/dashboard-vista.php'; ?>
 <?php } elseif ($profileView) { ?>
@@ -320,7 +326,7 @@ if ($isAdmin) {
 <?php } elseif ($operatorView) { ?>
     <?php require __DIR__.'/operadores-vista.php'; ?>
 <?php } elseif ($resourceView) { ?>
-    <a class="button back-link" href="<?= $isAdmin ? '/national' : '/' ?>"><?= icon('back') ?> Volver al panel principal</a>
+
     <div class="heading"><h1>Recursos de <?= h($territory['nombre']) ?></h1></div>
     <?php if (isset($_GET['guardado'])) { ?><p class="success" role="status">Recurso guardado.</p><?php } ?>
     <?php if ($errors) { ?><div class="errors" role="alert"><ul>
@@ -363,9 +369,9 @@ if ($isAdmin) {
 <?php } elseif ($printView) { ?>
     <?php require __DIR__.'/impresion-vista.php'; ?>
 <?php } elseif (! $editing) { ?>
-    <a class="button back-link" href="<?= $isAdmin ? '/national' : '/' ?>"><?= icon('back') ?> Volver al panel principal</a>
+
     <?php
-    $query = $db->prepare('SELECT * FROM atenciones WHERE provincia=? AND eliminado IS NULL ORDER BY id DESC');
+        $query = $db->prepare('SELECT * FROM atenciones WHERE provincia=? AND eliminado IS NULL ORDER BY id DESC');
         $query->execute([$province]);
         $records = $query->fetchAll();
         $counts = array_count_values(array_column($records, 'estado'));
@@ -377,16 +383,17 @@ if ($isAdmin) {
         <a class="button emphasis" href="/users"><?= icon('team') ?> Responsables APH</a>
     <?php } ?>
     <a class="button primary emphasis" href="?vista=nueva"><?= icon('add') ?> Nueva atención</a></div></div>
-    <nav class="filter-bar" aria-label="Filtrar atenciones">
-        <a class="button status all emphasis" href="?vista=atenciones" <?= $filter === '' ? 'aria-current="page"' : '' ?>><?= icon('list') ?> <span>Todas<strong><?= count($records) ?></strong></span></a>
-        <a class="button status pending emphasis" href="?vista=atenciones&amp;estado=Pendiente" <?= $filter === 'Pendiente' ? 'aria-current="page"' : '' ?>><?= icon('clock') ?> <span>Pendientes<strong><?= $counts['Pendiente'] ?? 0 ?></strong></span></a>
-        <a class="button status closed emphasis" href="?vista=atenciones&amp;estado=Cerrada" <?= $filter === 'Cerrada' ? 'aria-current="page"' : '' ?>><?= icon('check') ?> <span>Cerradas<strong><?= $counts['Cerrada'] ?? 0 ?></strong></span></a>
+    <nav class="filter-bar attention-kpis" aria-label="Resumen de atenciones">
+    <?php foreach ([['', 'all', 'list', 'Total de atenciones registradas', count($records)], ['Cerrada', 'closed', 'check', 'Atenciones cerradas', $counts['Cerrada'] ?? 0], ['Pendiente', 'pending', 'clock', 'Atenciones pendientes', $counts['Pendiente'] ?? 0]] as [$key,$style,$symbol,$label,$count]) { ?>
+        <a class="button status emphasis <?= h($style) ?>" data-state="<?= h($key) ?>" data-count="<?= h($count) ?>" href="<?= h('/?'.http_build_query(['vista' => 'atenciones', 'estado' => $filter === $key ? '' : $key])) ?>" aria-pressed="<?= $filter === $key ? 'true' : 'false' ?>"><?= icon($symbol) ?><span><?= h($label) ?><strong><?= h($count) ?></strong></span></a>
+    <?php } ?>
     </nav>
+    <div class="card module-controls"><label for="attention-province">Provincia</label><select id="attention-province" disabled><option><?= h($territory['nombre']) ?></option></select>
     <div class="actions export-actions">
         <a class="button" href="?vista=exportar"><?= icon('download') ?> Exportar cerradas a Excel</a>
         <a class="button" href="?vista=geojson"><?= icon('pin') ?> Exportar ubicaciones (GeoJSON)</a>
     </div>
-    <div class="card table"><table>
+    </div><div class="card table"><table>
         <thead><tr><th>Hoja de atención</th><th>Fecha</th><th>Cantón</th><th>Código APH</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody>
         <?php $shown = 0;
@@ -397,12 +404,12 @@ if ($isAdmin) {
             $shown++;
             $values = json_decode($item['datos'], true, 512, JSON_THROW_ON_ERROR);
             ?>
-            <tr><td><a href="?id=<?= h($item['id']) ?>"><?= h($values['K'] ?: 'Sin número de hoja') ?></a></td>
+            <tr class="<?= $item['estado'] === 'Pendiente' ? 'attention-pending' : '' ?>"><td><a href="?id=<?= h($item['id']) ?>&amp;return_estado=<?= h($filter) ?>"><?= h($values['K'] ?: 'Sin número de hoja') ?></a></td>
             <td><?= h($values['B']) ?></td><td><?= h($values['G'] ?: '—') ?></td>
             <td><?= h($values['C'] ?: '—') ?></td><td><span class="badge status <?= $statusClasses[$item['estado']] ?>"><?= icon($item['estado'] === 'Cerrada' ? 'check' : 'clock') ?> <?= h($item['estado']) ?></span></td>
             <td><div class="row-actions">
                 <?php if (true) { ?>
-                    <a class="button icon-button" href="?id=<?= h($item['id']) ?>" aria-label="Editar hoja <?= h($values['K'] ?: 'sin número') ?>" title="Editar"><?= icon('edit') ?></a>
+                    <a class="button icon-button" href="?id=<?= h($item['id']) ?>&amp;return_estado=<?= h($filter) ?>" aria-label="Editar hoja <?= h($values['K'] ?: 'sin número') ?>" title="Editar"><?= icon('edit') ?></a>
                 <?php } ?>
                 <button type="button" class="button icon-button danger emphasis" data-delete-action="/?vista=eliminar&amp;id=<?= h($item['id']) ?>" data-version="<?= h($item['version']) ?>" data-province="<?= h($province) ?>" data-sheet="<?= h($values['K']) ?>" aria-label="Eliminar hoja <?= h($values['K'] ?: 'sin número') ?>" title="Eliminar"><?= icon('delete') ?></button>
                 <a class="button icon-button" href="?vista=imprimir&amp;id=<?= h($item['id']) ?>" aria-label="Imprimir hoja <?= h($values['K'] ?: 'sin número') ?> o guardar como PDF" title="Imprimir / PDF"><?= icon('print') ?></a>
@@ -413,7 +420,7 @@ if ($isAdmin) {
         </tbody>
     </table></div>
 <?php } else { ?>
-    <a class="button back-link" href="?vista=atenciones"><?= icon('back') ?> Volver a atenciones</a>
+
     <div class="heading"><h1><?= $record ? 'Hoja de atención '.h($savedData['K'] ?: 'sin número') : 'Nueva atención' ?></h1>
     <span class="badge status <?= $statusClasses[$record['estado'] ?? ''] ?? 'all' ?>"><?= h($record['estado'] ?? 'Sin guardar') ?></span></div>
     <?php if (isset($_GET['guardado']) && ! $errors) { ?><p class="success" role="status">Atención guardada.</p><?php } ?>
@@ -501,8 +508,8 @@ if ($isAdmin) {
                     $longitude = $data[$point.'_lon'] ?? null;
                     ?>
                     <div class="location-picker" data-field="f-<?= $key ?>"
-                        data-tiles="<?= h(getenv('APH_MAP_TILES') ?: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png') ?>"
-                        data-attribution="<?= h(getenv('APH_MAP_ATTRIBUTION') ?: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors') ?>"
+                        data-tiles="<?= h(config('maps.tiles')) ?>"
+                        data-attribution="<?= h(config('maps.attribution')) ?>"
                         data-islands="<?= $province === 'galapagos' ? '1' : '0' ?>">
                         <input type="hidden" name="<?= $point ?>_lat" value="<?= h((string) $latitude) ?>">
                         <input type="hidden" name="<?= $point ?>_lon" value="<?= h((string) $longitude) ?>">

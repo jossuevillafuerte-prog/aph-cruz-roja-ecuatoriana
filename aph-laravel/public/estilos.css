@@ -269,3 +269,20 @@ summary .brand-icon, summary .icon { display: inline-block; vertical-align: midd
 .province-scale { display:inline-flex; align-items:center; gap:.4rem; }
 #province-legend { margin-top:1rem; }
 @media(max-width:650px){.province-map-grid { grid-template-columns:minmax(0,1fr); } #ecuador-map {height:400px;} #galapagos-map {height:180px;} }
+
+.module-page > .back-link, .module-page > .card > .back-link { margin-bottom: 1rem; }
+.editor-dialog { width:min(720px,calc(100vw - 2rem)); max-height:calc(100dvh - 2rem); overflow:auto; border:0; border-radius:16px; padding:1.5rem; box-shadow:0 20px 70px #0005; }
+.editor-dialog::backdrop { background:#15243d88; }
+.editor-dialog .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.editor-dialog label { display:grid; gap:.4rem; min-width:0; }
+.editor-dialog .actions { margin-top:1rem; }
+.province-counts button[aria-pressed="true"] { color:#fff; background:#b91c1c; border-color:#991b1b; box-shadow:0 4px 12px #991b1b35; }
+@media(max-width:600px){.editor-dialog .grid{grid-template-columns:minmax(0,1fr)}.header-tools .logout{display:inline-flex!important}}
+
+/* Attention summaries and pending rows, shared by national and provincial lists. */
+.attention-kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:1rem 0; }
+.attention-kpis .button { min-width:0; white-space:normal; }
+.attention-kpis [aria-pressed="true"] { box-shadow:0 3px 12px #172b4d25; border-width:2px; }
+tr.attention-pending, tr.attention-pending > td { background:#FEF9C3; color:#332b16; }
+tr.attention-pending:hover > td { background:#fef3a3; }
+@media(max-width:600px){.attention-kpis{grid-template-columns:minmax(0,1fr)}}

@@ -83,6 +83,9 @@ function saveProfile(PDO $db, string $province, array $account, array $input, ?a
             $newCredential = credential(['clave' => $hash, 'revision' => $account['revision'] + 1]);
         }
         $db->prepare('UPDATE accounts SET name=?, updated_at=NOW() WHERE id=?')->execute([$name, auth()->id()]);
+        if ($name !== $account['nombre']) {
+            $db->prepare('UPDATE accounts SET first_name=NULL, last_name=NULL WHERE id=?')->execute([auth()->id()]);
+        }
         $province = auth()->user()->province ?? 'nacional';
         $query = $db->prepare('INSERT INTO perfiles (provincia,usuario,nombre) VALUES (?,?,?)
             ON DUPLICATE KEY UPDATE nombre=VALUES(nombre)');

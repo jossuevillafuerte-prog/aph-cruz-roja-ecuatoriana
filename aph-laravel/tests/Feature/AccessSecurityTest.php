@@ -135,6 +135,82 @@ class AccessSecurityTest extends TestCase
         $this->assertDatabaseHas('cambios', ['atencion' => $other, 'autor' => 'Cuenta nacional (manejoinformacion)', 'motivo' => 'Eliminación de atención']);
     }
 
+    public function test_user_editor_preserves_history_and_revokes_old_access(): void
+    {
+        Http::fake(['*' => Http::response(str_repeat('A', 35).':0', 200)]);
+        $old = DB::table('accounts')->find($this->tech);
+        $ficha = DB::table('atenciones')->insertGetId(['version' => 1, 'estado' => 'Pendiente', 'datos' => '{}', 'provincia' => 'azuay', 'responsable_id' => $old->operator_id]);
+        DB::table('sessions')->insert(['id' => 'editor-session', 'user_id' => (string) $this->tech, 'payload' => 'dummy', 'last_activity' => time()]);
+        $this->signed(true)->post('/users/'.$this->tech, ['action' => 'edit', 'first_name' => 'Ana', 'last_name' => 'Pérez', 'email' => 'ana@pichincha.cruzroja.org.ec', 'password' => 'Xq7!Rt', 'role' => 'technician', 'province' => 'pichincha'])->assertRedirect();
+        $updated = DB::table('accounts')->find($this->tech);
+        $this->assertSame('Ana Pérez', $updated->name);
+        $this->assertSame('Pérez', $updated->last_name);
+        $this->assertSame('pichincha', $updated->province);
+        $this->assertTrue(password_verify('Xq7!Rt', $updated->password));
+        $this->assertNotEquals($old->operator_id, $updated->operator_id);
+        $this->assertDatabaseHas('atenciones', ['id' => $ficha, 'provincia' => 'azuay', 'responsable_id' => $old->operator_id]);
+        $this->assertDatabaseMissing('sessions', ['id' => 'editor-session']);
+        $this->assertDatabaseHas('security_events', ['event' => 'account_password_reset', 'target' => 'account:'.$this->tech]);
+        $this->assertDatabaseHas('security_events', ['event' => 'account_permissions_changed', 'target' => 'account:'.$this->tech]);
+        $this->signed()->get('/?id='.$ficha)->assertNotFound();
+    }
+
+    public function test_user_editor_validates_permissions_and_preserves_blank_password(): void
+    {
+        $hash = DB::table('accounts')->where('id', $this->tech)->value('password');
+        $input = ['action' => 'edit', 'first_name' => 'Ana', 'last_name' => '', 'email' => null, 'password' => '', 'role' => 'technician', 'province' => 'azuay'];
+        $this->signed()->post('/users/'.$this->tech, $input)->assertForbidden();
+        $this->signed(true)->post('/users/'.$this->tech, array_replace($input, ['role' => 'owner']))->assertSessionHasErrors('role');
+        $this->post('/users/'.$this->tech, array_replace($input, ['province' => 'invalid']))->assertSessionHasErrors('province');
+        $this->post('/users/'.$this->tech, array_replace($input, ['password' => 'abc']))->assertSessionHasErrors('password');
+        $this->post('/users/'.$this->admin, $input)->assertSessionHasErrors('role');
+        $this->post('/users/'.$this->tech, $input)->assertRedirect();
+        $this->assertSame($hash, DB::table('accounts')->where('id', $this->tech)->value('password'));
+        $this->post('/users/'.$this->tech, array_replace($input, ['role' => 'superadmin', 'province' => null]))->assertRedirect();
+        $this->assertDatabaseHas('accounts', ['id' => $this->tech, 'role' => 'superadmin', 'province' => null, 'operator_id' => null]);
+    }
+
+    public function test_navigation_header_and_module_order_are_consistent(): void
+    {
+        $this->signed(true);
+        foreach (['/national', '/national?view=atenciones', '/users', '/security', '/?vista=recursos&select_province=1', '/?vista=perfil'] as $url) {
+            $html = $this->get($url)->assertOk()->assertHeader('Referrer-Policy', 'strict-origin')->getContent();
+            preg_match('/<header.*?<\/header>/s', $html, $header);
+            $this->assertStringContainsString('action="/logout"', $header[0]);
+            preg_match('/<nav aria-label="Menú principal">(.*?)<\/nav>/s', $html, $menu);
+            if ($url === '/?vista=perfil') {
+                $this->assertStringContainsString('href="/security"', $menu[1]);
+            } else {
+                $this->assertStringNotContainsString('href="/security"', $menu[1]);
+            }
+            if ($url !== '/national') {
+                $this->assertLessThan(strpos($html, '<h1>'), strpos($html, 'Volver al panel principal'));
+            }
+        }
+    }
+
+    public function test_attention_summaries_are_provincial_and_exclude_deleted_records(): void
+    {
+        require_once base_path('legacy/modelo.php');
+        $data = array_fill_keys(array_keys(FIELDS), '');
+        $data['K'] = 'KPI-PENDING';
+        $pending = DB::table('atenciones')->insertGetId(['version' => 1, 'estado' => 'Pendiente', 'datos' => json_encode($data), 'provincia' => 'azuay']);
+        $data['K'] = 'KPI-CLOSED';
+        DB::table('atenciones')->insert(['version' => 1, 'estado' => 'Cerrada', 'datos' => json_encode($data), 'provincia' => 'azuay']);
+        DB::table('atenciones')->insert(['version' => 1, 'estado' => 'Pendiente', 'datos' => json_encode($data), 'provincia' => 'pichincha']);
+        DB::table('atenciones')->insert(['version' => 1, 'estado' => 'Pendiente', 'datos' => json_encode($data), 'provincia' => 'azuay', 'eliminado' => now()]);
+        $response = $this->signed(true)->get('/national?view=atenciones&province=azuay&estado=Pendiente');
+        $response->assertOk()->assertViewHas('total', 2)->assertViewHas('counts', fn ($v) => (int) $v['Cerrada'] === 1 && (int) $v['Pendiente'] === 1)->assertViewHas('rows', fn ($rows) => $rows->total() === 1)->assertSee('KPI-PENDING')->assertDontSee('KPI-CLOSED');
+        $html = $response->getContent();
+        $this->assertLessThan(strpos($html, 'national-province'), strpos($html, 'attention-kpis'));
+        $response->assertSee('class="attention-pending"', false);
+        $this->get('/?id='.$pending.'&return_province=azuay&return_estado=Pendiente&return_page=2')->assertOk()->assertSee('Volver a atenciones')->assertSee('/national?view=atenciones&amp;province=azuay&amp;estado=Pendiente&amp;page=2', false);
+        $this->get('/national?view=atenciones&estado=invalid')->assertSessionHasErrors('estado');
+        $this->signed()->get('/?vista=atenciones&estado=Cerrada')->assertOk()->assertSee('KPI-CLOSED')->assertDontSee('KPI-PENDING')->assertSee('data-count="2"', false)->assertDontSee('<tr class="attention-pending">', false);
+        $this->get('/?id='.$pending.'&return_estado=Pendiente')->assertOk()->assertSee('Volver a atenciones')->assertSee('/?vista=atenciones&amp;estado=Pendiente', false);
+        $this->get('/?vista=nueva')->assertOk()->assertSee('Volver al panel principal')->assertDontSee('Volver a atenciones');
+    }
+
     public function test_deactivation_revokes_sessions(): void
     {
         DB::table('sessions')->insert(['id' => 'testsession', 'user_id' => (string) $this->tech, 'payload' => 'dummy', 'last_activity' => time()]);

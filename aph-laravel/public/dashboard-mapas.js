@@ -80,7 +80,7 @@ const maps=[];
 document.querySelectorAll('.dashboard-map').forEach(node=>{
  if(!window.L){node.textContent='Mapa no disponible.';return;}
  const map=L.map(node,{scrollWheelZoom:false}).setView([-2.9,-79],9);
- L.tileLayer(node.dataset.tiles,{attribution:node.dataset.attribution,maxZoom:19}).addTo(map);
+ L.tileLayer(node.dataset.tiles,{attribution:node.dataset.attribution,maxZoom:19}).on('tileerror',()=>{document.getElementById('map-count-'+node.dataset.location).textContent='No se pudo cargar parte del mapa base. Los puntos registrados se conservan. Verifica la conexión o el proveedor cartográfico.';}).addTo(map);
  maps.push({map,layer:L.layerGroup().addTo(map),key:node.dataset.location,fitted:false});
 });
 function updateMaps(rows) {
@@ -102,10 +102,13 @@ function updateProvinces(rows){
  if(!provinceFeatures)return;
  const totals=new Map(counts(rows,'provincia'));const max=Math.max(0,...totals.values());
  const features=provinceFeatures.features;
- const list=document.getElementById('province-counts');list.replaceChildren();
- [...features].sort((a,b)=>(totals.get(b.properties.name)||0)-(totals.get(a.properties.name)||0)||a.properties.name.localeCompare(b.properties.name,'es')).forEach(f=>{
-  const name=f.properties.name,n=totals.get(name)||0;const b=el('button',`${name}: ${n}`,'button emphasis');b.type='button';b.dataset.province=f.properties.key;b.dataset.count=n;b.setAttribute('aria-pressed',String(filters.get('provincia')===name));b.onclick=()=>toggle('provincia',name);list.append(b);
- });
+ const list=document.getElementById('province-counts');
+ if(!list.children.length){
+  [...features].sort((a,b)=>a.properties.name.localeCompare(b.properties.name,'es')).forEach(f=>{
+   const b=el('button',undefined,'button emphasis');b.type='button';b.dataset.province=f.properties.key;b.dataset.name=f.properties.name;b.onclick=()=>toggle('provincia',f.properties.name);list.append(b);
+  });
+ }
+ for(const button of list.children){const name=button.dataset.name,n=totals.get(name)||0;button.dataset.count=n;button.textContent=`${name}: ${n}`;button.setAttribute('aria-pressed',String(filters.get('provincia')===name));}
  provinceMaps.forEach(({layer})=>layer.eachLayer(region=>{
   const name=region.feature.properties.name,n=totals.get(name)||0;
   region.setStyle({fillColor:provinceColor(n,max),fillOpacity:.9,color:filters.get('provincia')===name?'#172b4d':'#718096',weight:filters.get('provincia')===name?3:1});

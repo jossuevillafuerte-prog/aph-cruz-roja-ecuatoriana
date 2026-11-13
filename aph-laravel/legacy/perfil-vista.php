@@ -1,8 +1,6 @@
-<a class="button back-link" href="<?= $isAdmin ? '/national' : '/' ?>"><?php
+<?php use App\Security\PasswordPolicy;
 
-use App\Security\PasswordPolicy;
-
-?><?= icon('back') ?> Volver al panel principal</a>
+?>
 <div class="heading"><div><p class="eyebrow">CUENTA PERSONAL</p><h1>Mi perfil</h1></div></div>
 <?php if (isset($_GET['guardado'])) { ?><p class="success" role="status">Perfil actualizado.</p><?php } ?>
 <?php if ($errors) { ?><div class="errors" role="alert"><ul>

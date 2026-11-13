@@ -11,11 +11,15 @@ class NationalController extends Controller
     public function index(Request $request)
     {
         $provinces = json_decode(file_get_contents(base_path('legacy/provincias.json')), true);
-        $request->validate(['province' => ['nullable', Rule::in(array_keys($provinces))]]);
+        $request->validate(['province' => ['nullable', Rule::in(array_keys($provinces))], 'estado' => ['nullable', Rule::in(['Pendiente', 'Cerrada'])]]);
         $province = $request->query('province') ?? '';
-        $rows = DB::table('atenciones')->whereNull('eliminado')->when($province, fn ($query) => $query->where('provincia', $province))->orderByDesc('id')->paginate(30)->withQueryString();
+        $state = $request->query('estado') ?? '';
+        $query = DB::table('atenciones')->whereNull('eliminado')->when($province, fn ($query) => $query->where('provincia', $province));
+        $counts = (clone $query)->selectRaw('estado, COUNT(*) as total')->groupBy('estado')->pluck('total', 'estado')->all();
+        $total = array_sum($counts);
+        $rows = $query->when($state, fn ($query) => $query->where('estado', $state))->orderByDesc('id')->paginate(30)->withQueryString();
 
-        return view('users.national', compact('provinces', 'rows', 'province'));
+        return view('users.national', compact('provinces', 'rows', 'province', 'state', 'counts', 'total'));
     }
 
     public function scope(Request $r)
