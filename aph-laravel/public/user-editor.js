@@ -9,10 +9,11 @@
         form.elements.province.required = !national;
         if (national) form.elements.province.value = '';
     }
-    function openEditor(id) {
-        form.action = '/users/' + encodeURIComponent(id);
+    function openEditor(id, updateUrl) {
+        if (updateUrl) form.setAttribute('action', updateUrl);
         form.elements.edit_user_id.value = id;
         form.elements.password.value = '';
+        dialog.querySelectorAll('[data-error-user-id]').forEach(error => { error.hidden = error.dataset.errorUserId !== String(id); });
         syncRole();
         dialog.showModal();
         form.elements.first_name.focus();
@@ -25,11 +26,11 @@
             form.elements.email.value = button.dataset.email;
             form.elements.role.value = button.dataset.role;
             form.elements.province.value = button.dataset.province;
-            openEditor(button.dataset.id);
+            openEditor(button.dataset.id, button.dataset.updateUrl);
         });
     });
     form.elements.role.addEventListener('change', syncRole);
     dialog.querySelectorAll('[data-close-editor]').forEach(button => button.addEventListener('click', () => dialog.close()));
-    dialog.addEventListener('close', () => {form.elements.password.value = '';opener?.focus();});
+    dialog.addEventListener('close', () => {dialog.querySelectorAll('[data-error-user-id]').forEach(error => error.remove());form.elements.password.value = '';opener?.focus();});
     if (/^\d+$/.test(form.dataset.reopen)) openEditor(form.dataset.reopen);
 })();

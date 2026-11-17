@@ -31,7 +31,7 @@ $token = h($_SESSION['token']);
                 <?php foreach (OPERATOR_ROLES as $role) { ?><option><?= h($role) ?></option><?php } ?>
             </select></div>
         <div class="field"><label for="clave-operador">Contraseña inicial</label>
-            <input id="clave-operador" name="clave_operador" type="password" minlength="6" maxlength="72" autocomplete="new-password" required>
+            <input id="clave-operador" name="clave_operador" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
             <small><?= h(PasswordPolicy::DESCRIPTION) ?></small></div>
     </div>
     <p class="actions"><button class="primary emphasis"><?= icon('add') ?> Crear cuenta</button></p>
@@ -59,7 +59,7 @@ $token = h($_SESSION['token']);
                         <input type="hidden" name="_token" value="<?= $token ?>">
                         <input type="hidden" name="operador_id" value="<?= $operatorId ?>">
                         <label for="clave-<?= $operatorId ?>">Nueva contraseña</label>
-                        <input id="clave-<?= $operatorId ?>" name="clave_operador" type="password" minlength="6" maxlength="72" autocomplete="new-password" required>
+                        <input id="clave-<?= $operatorId ?>" name="clave_operador" type="password" minlength="8" maxlength="72" autocomplete="new-password" required>
                         <button name="accion" value="clave">Guardar contraseña</button>
                     </form>
                 </details>

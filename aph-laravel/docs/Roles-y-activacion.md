@@ -1,6 +1,6 @@
 # Roles nacionales y activación institucional
 
-Actualización: 13 de noviembre de 2026. Sustituye la política de roles y segundo factor anterior.
+Actualización: 17 de noviembre de 2026. Sustituye la política de roles y segundo factor anterior.
 
 ## Decisiones confirmadas
 
@@ -12,9 +12,9 @@ El archivo original cuentas-provinciales.tsv, compatible con Excel, no se modifi
 
 ## Acceso
 
-Solo usuario y contraseña. Se retiraron las rutas y pantallas TOTP y se invalidaron sesiones previas. No se guardan contraseñas en cookies; el gestor del navegador puede recordarlas. Se conserva la política de 6 a 72 caracteres ASCII, con letra, número y símbolo permitido, sin tildes, ñ ni espacios, y comprobación de contraseñas filtradas al establecer una nueva.
+Solo usuario y contraseña. Se retiraron las rutas y pantallas TOTP y se invalidaron sesiones previas. No se guardan contraseñas en cookies; el gestor del navegador puede recordarlas. Las nuevas contraseñas requieren de 8 a 72 caracteres ASCII, con mayúscula, minúscula, número y símbolo permitido, sin tildes, ñ ni espacios, y comprobación de contraseñas filtradas al establecer una nueva.
 
-Continúan el límite de intentos, cookies HttpOnly/SameSite=Strict/Secure bajo HTTPS, protección CSRF, aviso a los ocho minutos, vencimiento a los diez de inactividad y máximo absoluto de ocho horas. La contraseña de seis caracteres sin MFA es una excepción expresamente solicitada y no se presenta como conformidad NIST ni certificación ISO.
+Continúan el límite de intentos, cookies HttpOnly/SameSite=Strict/Secure bajo HTTPS, protección CSRF, aviso a los ocho minutos, vencimiento a los diez de inactividad y máximo absoluto de ocho horas. El acceso sin MFA responde a la decisión del piloto y no se presenta como conformidad NIST ni certificación ISO.
 
 Las cuentas migradas y la cuenta nacional tienen una excepción temporal legacy_access: pueden entrar sin correo verificado. El sistema no inventa fechas de verificación. Las cuentas nuevas quedan pendientes de activación. La excepción no se ofrece como interruptor en la interfaz.
 
@@ -49,3 +49,11 @@ El acceso a Seguridad se muestra solamente en el menú de Mi perfil. Cerrar sesi
 Los mapas utilizan Leaflet y OpenStreetMap, sin API key. Se detectó que no-referrer suprimía el Referer que exige la política del proveedor (https://operations.osmfoundation.org/policies/tiles/). Se sustituyó por strict-origin; en la verificación del navegador los tiles respondieron HTTP 200 y recibieron únicamente http://127.0.0.1:8090/. El bloqueo reportado no se reprodujo de forma constante: también se recibieron imágenes antes del cambio. No se identificó un rechazo por CORS, X-Frame-Options o CSP de la aplicación.
 
 APH_MAP_TILES y APH_MAP_ATTRIBUTION se leen desde config/maps.php, compatible con config:cache. En producción se requiere HTTPS; cualquier CSP impuesta por el alojamiento debe permitir el origen del proveedor en img-src. La disponibilidad del servicio cartográfico externo no está garantizada por esta configuración. No se envían identificadores de fichas en el Referer.
+
+## Actualización de interfaz y edición (17 de noviembre de 2026)
+
+El dashboard muestra accesos directos a Perfil, Recursos y Atenciones; Usuarios Nacionales solo para el superadministrador. Se retiraron el buscador por hoja y los gráficos de despachos por recurso individual y CIE-10. Se mantienen el contador general de despachos y el gráfico por tipo de recurso.
+
+El modal envía PUT con CSRF a users.update. Tanto el éxito como los errores de validación vuelven explícitamente a users.index, sin depender del Referer. Se conserva la contraseña al dejarla vacía; una nueva contraseña en edición, perfil y activación usa la misma política central de ocho a 72 caracteres, mayúscula, minúscula, número y símbolo permitido. El acceso conserva las contraseñas existentes. Al editar su propia cuenta activa, el administrador renueva el identificador y la credencial de su sesión actual; las otras sesiones se revocan. Si la cuenta requiere reactivación, no se conserva un acceso inválido.
+
+Los errores de validación del editor se vinculan al usuario editado y se limpian al cerrar el modal. El fallo de consulta de contraseñas filtradas tiene un mensaje propio. En el entorno local se corrigió la confianza de certificados de PHP mediante un almacén CA; no se desactivó la validación TLS. El servidor definitivo necesita su propio almacén CA actualizado (`curl.cainfo` / `openssl.cafile` cuando corresponda).

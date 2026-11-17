@@ -7,7 +7,9 @@ use App\Security\PasswordPolicy;
 use App\Security\Security;
 use App\Services\AccountInvitations;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -57,6 +59,19 @@ class UsersController extends Controller
 
     public function update(Request $r, int $id)
     {
+        if ($r->input('action') === 'edit') {
+            $r->merge(['edit_user_id' => (string) $id]);
+        }
+        try {
+            return $this->applyUpdate($r, $id);
+        } catch (ValidationException $error) {
+            $error->redirectTo(route('users.index'));
+            throw $error;
+        }
+    }
+
+    private function applyUpdate(Request $r, int $id)
+    {
         $account = DB::table('accounts')->find($id);
         abort_unless($account, 404);
         $action = $r->input('action');
@@ -64,7 +79,7 @@ class UsersController extends Controller
             $v = $r->validate(['active' => 'required|boolean']);
             abort_if((string) $id === (string) $r->user()->id, 422, 'No puedes desactivar tu propia cuenta.');
             if ($v['active'] && ! $account->legacy_access && ! $account->email_verified_at) {
-                return back()->withErrors(['active' => 'La cuenta debe completar su activación por correo.']);
+                return redirect()->route('users.index')->withErrors(['active' => 'La cuenta debe completar su activación por correo.']);
             }
             DB::transaction(function () use ($id, $v, $account) {
                 DB::table('accounts')->where('id', $id)->update(['active' => $v['active'], 'disabled_at' => $v['active'] ? null : now(), 'revision' => DB::raw('revision+1'), 'updated_at' => now()]);
@@ -82,9 +97,9 @@ class UsersController extends Controller
                 'first_name' => 'required|string|max:100',
                 'last_name' => 'nullable|string|max:100',
                 'email' => [$account->legacy_access ? 'nullable' : 'required', 'max:254', new InstitutionalEmail, Rule::unique('accounts', 'email')->ignore($id)],
-                'password' => ['nullable', 'string', 'max:72', function ($attribute, $value, $fail) {
-                    if (! PasswordPolicy::accepts($value)) {
-                        $fail(PasswordPolicy::DESCRIPTION);
+                'password' => ['nullable', 'string', function ($attribute, $value, $fail) {
+                    if ($error = PasswordPolicy::error($value)) {
+                        $fail($error);
                     }
                 }],
                 'role' => ['required', Rule::in(['technician', 'superadmin'])],
@@ -99,7 +114,7 @@ class UsersController extends Controller
             }
             $v['province'] = $v['role'] === 'superadmin' ? null : $v['province'];
             if (! empty($v['password'])) {
-                $v['password'] = password_hash($v['password'], PASSWORD_BCRYPT);
+                $v['password'] = Hash::make($v['password']);
             } else {
                 unset($v['password']);
             }
@@ -149,7 +164,17 @@ class UsersController extends Controller
             abort(422);
         }
 
-        return back()->with('notice', 'Usuario actualizado. Se revocaron sus sesiones anteriores.');
+        if ((string) $id === (string) Auth::id()) {
+            $fresh = Auth::getProvider()->retrieveById((string) $id);
+            if (! $fresh) {
+                return Security::logout($r, 'account_requires_activation');
+            }
+            Auth::setUser($fresh);
+            $r->session()->regenerate(true);
+            $r->session()->put('credential', Security::stamp($fresh));
+        }
+
+        return redirect()->route('users.index')->with('notice', 'Usuario actualizado correctamente. Se revocaron las otras sesiones de la cuenta.');
     }
 
     public function invite(Request $r, int $id)

@@ -105,7 +105,7 @@ class AccessSecurityTest extends TestCase
     {
         $this->signed(true)->get('/national')->assertOk()
             ->assertSee('href="/national?view=atenciones"', false)
-            ->assertSee('href="/?vista=nueva&amp;select_province=1"', false);
+            ->assertSee('dashboard-shortcuts', false)->assertDontSee('sheet-filter', false);
         $this->get('/?vista=perfil')->assertOk()->assertSee('clave_actual', false);
         $this->get('/?vista=nueva')->assertOk()->assertSee('Selecciona la provincia');
         $this->get('/?vista=recursos')->assertOk()->assertSee('Selecciona la provincia');
@@ -141,12 +141,12 @@ class AccessSecurityTest extends TestCase
         $old = DB::table('accounts')->find($this->tech);
         $ficha = DB::table('atenciones')->insertGetId(['version' => 1, 'estado' => 'Pendiente', 'datos' => '{}', 'provincia' => 'azuay', 'responsable_id' => $old->operator_id]);
         DB::table('sessions')->insert(['id' => 'editor-session', 'user_id' => (string) $this->tech, 'payload' => 'dummy', 'last_activity' => time()]);
-        $this->signed(true)->post('/users/'.$this->tech, ['action' => 'edit', 'first_name' => 'Ana', 'last_name' => 'Pérez', 'email' => 'ana@pichincha.cruzroja.org.ec', 'password' => 'Xq7!Rt', 'role' => 'technician', 'province' => 'pichincha'])->assertRedirect();
+        $this->signed(true)->post('/users/'.$this->tech, ['action' => 'edit', 'first_name' => 'Ana', 'last_name' => 'Pérez', 'email' => 'ana@pichincha.cruzroja.org.ec', 'password' => 'Xq7!Rtabab', 'role' => 'technician', 'province' => 'pichincha'])->assertRedirect();
         $updated = DB::table('accounts')->find($this->tech);
         $this->assertSame('Ana Pérez', $updated->name);
         $this->assertSame('Pérez', $updated->last_name);
         $this->assertSame('pichincha', $updated->province);
-        $this->assertTrue(password_verify('Xq7!Rt', $updated->password));
+        $this->assertTrue(password_verify('Xq7!Rtabab', $updated->password));
         $this->assertNotEquals($old->operator_id, $updated->operator_id);
         $this->assertDatabaseHas('atenciones', ['id' => $ficha, 'provincia' => 'azuay', 'responsable_id' => $old->operator_id]);
         $this->assertDatabaseMissing('sessions', ['id' => 'editor-session']);
@@ -211,6 +211,27 @@ class AccessSecurityTest extends TestCase
         $this->get('/?vista=nueva')->assertOk()->assertSee('Volver al panel principal')->assertDontSee('Volver a atenciones');
     }
 
+    public function test_user_update_with_origin_only_referer_redirects_explicitly_and_persists(): void
+    {
+        $email = 'same@azuay.cruzroja.org.ec';
+        DB::table('accounts')->where('id', $this->tech)->update(['email' => $email]);
+        $originalHash = DB::table('accounts')->where('id', $this->tech)->value('password');
+        $input = ['action' => 'edit', 'first_name' => 'Nombre cambiado', 'last_name' => 'Apellido', 'email' => $email, 'password' => '', 'role' => 'technician', 'province' => 'azuay'];
+        $this->signed(true)->withHeader('Referer', 'http://localhost/')->put('/users/'.$this->tech, $input)->assertRedirect(route('users.index'))->assertSessionHas('notice');
+        $this->assertDatabaseHas('accounts', ['id' => $this->tech, 'name' => 'Nombre cambiado Apellido', 'email' => $email, 'password' => $originalHash]);
+        $this->put('/users/'.$this->tech, array_replace($input, ['email' => 'fuera@gmail.com', 'password' => 'abc']))->assertRedirect(route('users.index'))->assertSessionHasErrors(['email', 'password'])->assertSessionHas('_old_input.edit_user_id', (string) $this->tech)->assertSessionMissing('_old_input.password');
+        $this->assertDatabaseHas('accounts', ['id' => $this->tech, 'email' => $email, 'password' => $originalHash]);
+    }
+
+    public function test_editing_own_account_keeps_current_session_and_revokes_others(): void
+    {
+        DB::table('sessions')->insert(['id' => 'other-admin-session', 'user_id' => (string) $this->admin, 'payload' => 'dummy', 'last_activity' => time()]);
+        $this->signed(true)->withHeader('Referer', 'http://localhost/')->put('/users/'.$this->admin, ['action' => 'edit', 'first_name' => 'Cuenta', 'last_name' => 'Actualizada', 'email' => 'manejoinformacion@cruzroja.org.ec', 'password' => '', 'role' => 'superadmin'])->assertRedirect(route('users.index'));
+        $this->assertDatabaseMissing('sessions', ['id' => 'other-admin-session']);
+        $this->assertSame(Security::stamp(Auth::getProvider()->retrieveById((string) $this->admin)), session('credential'));
+        $this->get('/users')->assertOk()->assertSee('Cuenta Actualizada');
+    }
+
     public function test_deactivation_revokes_sessions(): void
     {
         DB::table('sessions')->insert(['id' => 'testsession', 'user_id' => (string) $this->tech, 'payload' => 'dummy', 'last_activity' => time()]);
@@ -265,13 +286,13 @@ class AccessSecurityTest extends TestCase
     public function test_password_rules_and_leak_filter(): void
     {
         Http::fake(['*' => Http::response(str_repeat('A', 35).':0', 200)]);
-        $this->assertTrue(PasswordPolicy::accepts('Xq7!Rt'));
-        foreach (['Ab1!', 'abcdef', 'Abc123', 'Ábc12!', 'Abñ12!', 'Ab 12!', 'Ab12🙂', 'Password1!'] as $bad) {
+        $this->assertTrue(PasswordPolicy::accepts('Xq7!Rtab'));
+        foreach (['abcdef1@', 'ABCDEFG1@', 'Abcdefg@', 'Abcdefg1', 'Ab1!', 'abcdef', 'Abc123', 'Ábc12!', 'Abñ12!', 'Ab 12!', 'Ab12🙂', 'Password1!'] as $bad) {
             $this->assertFalse(PasswordPolicy::accepts($bad));
         }
         Http::swap(new Factory);
-        Http::fake(['*' => Http::response(substr(strtoupper(sha1('Xq7!Rt')), 5).':14', 200)]);
-        $this->assertFalse(PasswordPolicy::accepts('Xq7!Rt'));
+        Http::fake(['*' => Http::response(substr(strtoupper(sha1('Xq7!Rtab')), 5).':14', 200)]);
+        $this->assertFalse(PasswordPolicy::accepts('Xq7!Rtab'));
     }
 
     public function test_https_and_headers(): void

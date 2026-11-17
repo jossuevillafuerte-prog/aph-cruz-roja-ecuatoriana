@@ -35,8 +35,8 @@ class ActivationController extends Controller
         if (! $valid) {
             return back()->withErrors(['code' => 'Código inválido, vencido o con demasiados intentos. Solicita una nueva invitación.']);
         }
-        if (! PasswordPolicy::accepts($r->input('password'))) {
-            return back()->withErrors(['password' => PasswordPolicy::DESCRIPTION]);
+        if ($error = PasswordPolicy::error($r->input('password'))) {
+            return back()->withErrors(['password' => $error]);
         }
         $done = DB::transaction(function () use ($valid, $ticket, $r) {
             $invite = DB::table('account_invitations')->where('account_id', $valid)->where('ticket_hash', hash('sha256', $ticket))->lockForUpdate()->first();

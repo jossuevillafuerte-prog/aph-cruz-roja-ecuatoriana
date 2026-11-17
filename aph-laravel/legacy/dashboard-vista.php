@@ -4,7 +4,7 @@ $query->execute([$province, $province]);
 $analytics = [];
 foreach ($query as $row) {
     $data = json_decode($row['datos'], true, 512, JSON_THROW_ON_ERROR);
-    $safe = array_intersect_key($data, array_flip(['B', 'D', 'F', 'G', 'K', 'M', 'O', 'P', 'Q', 'R', 'S', 'U', 'J', 'Z', 'AA', 'evento_lat', 'evento_lon', 'destino_lat', 'destino_lon']));
+    $safe = array_intersect_key($data, array_flip(['B', 'D', 'F', 'G', 'K', 'M', 'O', 'P', 'Q', 'R', 'S', 'J', 'Z', 'AA', 'evento_lat', 'evento_lon', 'destino_lat', 'destino_lon']));
     $safe['provincia'] = $provinces[$row['provincia']]['nombre'];
     $safe['id'] = (int) $row['id'];
     $safe['estado'] = $row['estado'];
@@ -12,21 +12,14 @@ foreach ($query as $row) {
     $analytics[] = $safe;
 }
 ?>
-<div class="heading dashboard-heading">
-    <div><p class="eyebrow">ATENCIÓN PREHOSPITALARIA</p><?php if (auth()->user()->role !== 'superadmin') { ?><h1>Panel de <?= h($territory['nombre']) ?></h1><?php } ?>
-    <p class="heading-description">Selecciona una categoría o un punto del mapa para cruzar todas las estadísticas. Incluye pendientes y cerradas.</p></div>
-    <div class="actions"><a class="button emphasis" href="<?= auth()->user()->role === 'superadmin' ? '/national?view=atenciones' : '/?vista=atenciones' ?>"><?= icon('list') ?> Ver atenciones</a><a class="button primary emphasis" href="<?= auth()->user()->role === 'superadmin' ? '/?vista=nueva&amp;select_province=1' : '/?vista=nueva' ?>"><?= icon('add') ?> Nueva atención</a></div>
-</div>
-<section class="card dashboard-controls">
-    <label for="sheet-filter">Número de hoja de atención</label>
-    <input id="sheet-filter" type="search" placeholder="Buscar número de hoja" autocomplete="off" aria-describedby="sheet-help">
-    <div class="sheet-select-field"><label for="sheet-select">Escoger una hoja registrada</label>
-    <select id="sheet-select" aria-describedby="sheet-help"><option value="">Todas las hojas</option></select>
-    <small id="sheet-help">Busca para reducir la lista y selecciona el número exacto. Si un número se repite, se muestran todas sus fichas.</small></div>
-    <button type="button" class="button" id="clear-dashboard">Limpiar filtros</button>
-    <p id="dashboard-result" role="status" aria-live="polite"></p>
-    <div id="dashboard-filters" class="actions" aria-label="Filtros activos"></div>
-</section>
+<?php if (auth()->user()->role !== 'superadmin') { ?><h1>Panel principal</h1><?php } ?>
+<nav class="dashboard-shortcuts" aria-label="Accesos directos">
+<a class="button emphasis" href="/?vista=perfil"><?= icon('profile') ?><span>Mi Perfil</span></a>
+<?php if (auth()->user()->role === 'superadmin') { ?><a class="button emphasis" href="/users"><?= icon('team') ?><span>Usuarios Nacionales</span></a><?php } ?>
+<a class="button emphasis" href="<?= auth()->user()->role === 'superadmin' ? '/?vista=recursos&amp;select_province=1' : '/?vista=recursos' ?>"><?= icon('ambulance') ?><span>Recursos</span></a>
+<a class="button emphasis" href="<?= auth()->user()->role === 'superadmin' ? '/national?view=atenciones' : '/?vista=atenciones' ?>"><?= icon('list') ?><span>Atenciones</span></a>
+</nav>
+<div id="dashboard-filters" class="actions" aria-label="Filtros activos" hidden></div>
 <div id="dashboard-metrics" class="dashboard-breakdowns"></div>
 <div class="dashboard-breakdowns">
 <?php foreach (['evento' => 'Mapa de direcciones del evento', 'destino' => 'Mapa de localidades de destino'] as $key => $title) { ?>

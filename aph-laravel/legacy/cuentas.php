@@ -47,8 +47,14 @@ function saveProfile(PDO $db, string $province, array $account, array $input, ?a
     if ($name === '' || strlen($name) > 200) {
         $errors[] = 'Ingresa un nombre de hasta 200 bytes.';
     }
-    if ($changePassword && (! password_verify($current, $account['clave']) || ! validOperatorPassword($new) || $new !== $repeat)) {
-        $errors[] = 'Verifica la clave actual y confirma una nueva de 6 a 72 caracteres, con letra, número y símbolo (. @ _ - ! # $ %), sin tildes ni espacios, y no estar filtrada.';
+    if ($changePassword) {
+        if (! password_verify($current, $account['clave'])) {
+            $errors[] = 'La contraseña actual no es correcta.';
+        } elseif ($new !== $repeat) {
+            $errors[] = 'La confirmación de contraseña no coincide.';
+        } elseif ($error = PasswordPolicy::error($new)) {
+            $errors[] = $error;
+        }
     }
     if ($upload && ($upload['error'] ?? null) !== UPLOAD_ERR_NO_FILE) {
         $validFile = ($upload['error'] ?? null) === UPLOAD_ERR_OK && is_int($upload['size'] ?? null)

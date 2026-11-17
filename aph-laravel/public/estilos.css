@@ -286,3 +286,19 @@ summary .brand-icon, summary .icon { display: inline-block; vertical-align: midd
 tr.attention-pending, tr.attention-pending > td { background:#FEF9C3; color:#332b16; }
 tr.attention-pending:hover > td { background:#fef3a3; }
 @media(max-width:600px){.attention-kpis{grid-template-columns:minmax(0,1fr)}}
+
+.dashboard-shortcuts { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin:0 0 1.5rem; }
+.dashboard-shortcuts .button { min-height:90px; justify-content:flex-start; padding:1rem 1.25rem; border:1px solid #cbd5e1; background:#fff; color:#172b4d; }
+.dashboard-shortcuts .button:hover, .dashboard-shortcuts .button:focus-visible { background:#fff1f1; border-color:#c62828; box-shadow:0 4px 14px #172b4d20; }
+.dashboard-shortcuts .brand-icon { width:32px; height:32px; }
+#dashboard-filters[hidden] { display:none; }
+
+#dashboard-charts { grid-template-columns:repeat(2,minmax(0,1fr)); }
+#dashboard-charts > .interactive-chart:nth-last-child(2):nth-child(odd) { grid-column:1/-1; }
+@media(max-width:700px){#dashboard-charts{grid-template-columns:minmax(0,1fr)}}
+
+/* Separación uniforme entre el título de módulo y su contenido. */
+.module-page { --module-title-gap: 1.5rem; }
+.module-page > h1, .module-page > .heading, .module-page > .card > h1 { margin-bottom: var(--module-title-gap); }
+.module-page > h1 + *, .module-page > .heading + *, .module-page > .card > h1 + * { margin-top: 0; }
+[hidden] { display: none !important; }

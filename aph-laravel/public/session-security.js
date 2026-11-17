@@ -18,7 +18,7 @@
  function activity(e){if(!e.isTrusted||document.hidden||dialog.open)return;if(Date.now()-lastSent>30000)sync(true);}
  ['keydown','pointerdown','input','wheel'].forEach(event=>document.addEventListener(event,activity,{passive:true}));
  dialog.querySelector('button').onclick=()=>sync(true);
- document.addEventListener('submit',e=>{if(e.target.action?.endsWith('/logout')||e.target.action?.endsWith('/security/revoke'))channel?.postMessage('logout');});
+ document.addEventListener('submit',e=>{if(!(e.target instanceof HTMLFormElement))return;const path=new URL(e.target.getAttribute('action')||location.href,location.href).pathname;if(path==='/logout'||path==='/security/revoke')channel?.postMessage('logout');});
  window.addEventListener('pagehide',()=>{document.documentElement.style.visibility='hidden';});
  window.addEventListener('pageshow',()=>sync());document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync();});
  setInterval(()=>{const remaining=Math.min(idle,absolute)-Date.now();if(remaining<=0){channel?.postMessage('logout');lock();return;}if(remaining<=120000){if(!dialog.open)dialog.showModal();dialog.querySelector('.countdown').textContent=`Tiempo restante: ${Math.ceil(remaining/1000)} segundos.`;}},1000);

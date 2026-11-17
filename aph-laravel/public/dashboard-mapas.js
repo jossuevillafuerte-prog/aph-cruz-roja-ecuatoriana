@@ -4,19 +4,9 @@ const source = document.getElementById('dashboard-data');
 if (!source) return;
 const records = JSON.parse(source.textContent);
 const filters = new Map();
-const sheetSelect = document.getElementById('sheet-select');
-const sheetSearch = document.getElementById('sheet-filter');
-const sheets = [...new Set(records.map(r=>String(r.K||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
-function updateSheets() {
- const previous=sheetSelect.value, query=sheetSearch.value.trim().toLocaleLowerCase();
- sheetSelect.replaceChildren(new Option('Todas las hojas coincidentes',''));
- for(const sheet of sheets.filter(s=>s.toLocaleLowerCase().includes(query))) sheetSelect.add(new Option(sheet,sheet));
- if([...sheetSelect.options].some(o=>o.value===previous)) sheetSelect.value=previous;
-}
-updateSheets();
 let selectedIds = null;
 const colors = ['#d12e2a','#186b8c','#df9a18','#7255a5','#27836d','#b14a79','#64748b','#9c6929'];
-const labels = {provincia:'Provincia',F:'Evento o causa',M:'Tipo de identificación',O:'Sexo',Q:'Nacionalidad',R:'Condición de salud',S:'Discapacidad',U:'Códigos CIE-10',J:'Despachos por recurso',tipo:'Despachos por tipo de recurso',G:'Cantón',D:'Tipo de atención',mes:'Mes',B:'Fecha',edad:'Rango etario'};
+const labels = {provincia:'Provincia',F:'Evento o causa',M:'Tipo de identificación',O:'Sexo',Q:'Nacionalidad',R:'Condición de salud',S:'Discapacidad',tipo:'Despachos por tipo de recurso',G:'Cantón',D:'Tipo de atención',mes:'Mes',B:'Fecha',edad:'Rango etario'};
 const bands = [[4,'0–4'],[14,'5–14'],[24,'15–24'],[34,'25–34'],[44,'35–44'],[54,'45–54'],[64,'55–64'],[120,'65+']];
 const value = (r,key) => {
  if (key==='mes') return r.B?.slice(0,7) || 'Sin registrar';
@@ -135,10 +125,8 @@ if(document.getElementById('ecuador-map')){
 }
 
 function render() {
- const search=document.getElementById('sheet-filter').value.trim().toLocaleLowerCase();
- const rows=records.filter(r=>(!sheetSelect.value||String(r.K||'')===sheetSelect.value)&&(!search||String(r.K||'').toLocaleLowerCase().includes(search))&&(!selectedIds||selectedIds.has(r.id))&&[...filters].every(([key,v])=>value(r,key)===v));
- document.getElementById('dashboard-result').textContent=`${rows.length} de ${records.length} atenciones. Los filtros se combinan en todos los gráficos y mapas.`;
- const chips=document.getElementById('dashboard-filters');chips.replaceChildren();
+ const rows=records.filter(r=>(!selectedIds||selectedIds.has(r.id))&&[...filters].every(([key,v])=>value(r,key)===v));
+ const chips=document.getElementById('dashboard-filters');chips.replaceChildren();chips.hidden=!filters.size&&!selectedIds;
  filters.forEach((v,key)=>{const b=el('button',`${labels[key]}: ${v} ×`,'button');b.onclick=()=>{filters.delete(key);render();};chips.append(b);});
  if(selectedIds){const b=el('button','Ubicación seleccionada ×','button');b.onclick=()=>{selectedIds=null;render();};chips.append(b);}
  const km=new Map();rows.forEach(r=>{if(r.Z!==''&&r.AA!==''&&r.Z!=null&&r.AA!=null&&Number.isFinite(Number(r.Z))&&Number.isFinite(Number(r.AA))&&Number(r.Z)>=0&&Number(r.AA)>=Number(r.Z)&&r.B)km.set(r.B,(km.get(r.B)||0)+Number(r.AA)-Number(r.Z));});
@@ -147,10 +135,7 @@ function render() {
  document.getElementById('dashboard-charts').replaceChildren();
  pie(rows,'O');pie(rows,'S');pie(rows,'M',true);pie(rows,'R',true);
  line(counts(rows,'mes'),'mes','Atenciones por mes');line([...km],'B','Kilómetros recorridos por fecha',' km');
- ['F','J','tipo','Q','U','G','D'].forEach(key=>bars(rows,key));pyramid(rows);updateMaps(rows);updateProvinces(rows);
+ ['F','tipo','Q','G','D'].forEach(key=>bars(rows,key));pyramid(rows);updateMaps(rows);updateProvinces(rows);
 }
-sheetSearch.addEventListener('input',()=>{sheetSelect.value='';updateSheets();render();});
-sheetSelect.addEventListener('change',render);
-document.getElementById('clear-dashboard').onclick=()=>{filters.clear();selectedIds=null;sheetSearch.value='';sheetSelect.value='';updateSheets();render();};
 render();
 })();

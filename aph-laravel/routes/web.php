@@ -21,9 +21,9 @@ Route::middleware('limits')->group(function () {
     Route::middleware('superadmin')->group(function () {
         Route::get('/national', [NationalController::class, 'index']);
         Route::post('/scope', [NationalController::class, 'scope']);
-        Route::get('/users', [UsersController::class, 'index']);
+        Route::get('/users', [UsersController::class, 'index'])->name('users.index');
         Route::post('/users', [UsersController::class, 'store']);
-        Route::post('/users/{id}', [UsersController::class, 'update'])->whereNumber('id');
+        Route::match(['post', 'put', 'patch'], '/users/{id}', [UsersController::class, 'update'])->whereNumber('id')->name('users.update');
         Route::post('/users/{id}/invite', [UsersController::class, 'invite'])->whereNumber('id')->middleware('throttle:10,1');
     });
 });

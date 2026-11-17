@@ -44,12 +44,12 @@ La aplicación incorpora validaciones, catálogos, permisos provinciales e histo
 - Cookies HttpOnly y SameSite; uso de Secure y HTTPS exigido en producción.
 - Cierre de sesión disponible en todos los encabezados; acceso a Seguridad desde Mi perfil.
 
-La contraseña mínima de seis caracteres es una excepción solicitada para el piloto y **no constituye una certificación ni una declaración de cumplimiento de estándares de seguridad**. Las cuentas migradas mantienen temporalmente acceso sin verificación de correo. Los detalles y límites están en [Roles y activación](aph-laravel/docs/Roles-y-activacion.md) y [Seguridad y privacidad](aph-laravel/docs/Seguridad-y-privacidad.md).
+Las nuevas contraseñas requieren de 8 a 72 caracteres ASCII, con mayúscula, minúscula, número y uno de los símbolos permitidos (`. @ _ - ! # $ %`). Las contraseñas existentes no se cambian automáticamente. Esta política **no constituye una certificación ni una declaración de cumplimiento de estándares de seguridad**. Las cuentas migradas mantienen temporalmente acceso sin verificación de correo. Los detalles y límites están en [Roles y activación](aph-laravel/docs/Roles-y-activacion.md) y [Seguridad y privacidad](aph-laravel/docs/Seguridad-y-privacidad.md).
 
 ### Dashboard y georreferenciación
 
-- Gráficos por evento o causa, sexo, edad, nacionalidad, discapacidad, identificación, CIE-10, recursos y kilómetros recorridos por fecha.
-- Filtros cruzados al seleccionar categorías, hojas de atención o puntos de los mapas.
+- Gráficos por evento o causa, sexo, edad, nacionalidad, discapacidad, identificación, tipos de recurso y kilómetros recorridos por fecha.
+- Filtros cruzados al seleccionar categorías, provincias o puntos de los mapas.
 - Mapas de ubicación del evento y localidad de destino.
 - Mapa coroplético de Ecuador con las 24 provincias, recuadro de Galápagos, escala de colores y cantidades de atenciones.
 - Botones provinciales en orden alfabético fijo, con estado seleccionado visible.
@@ -93,3 +93,7 @@ Permanecen pendientes la URL pública HTTPS, el servicio institucional de correo
 Este repositorio contiene código, migraciones, pruebas, catálogos y recursos de la aplicación. **No incluye contraseñas, claves de configuración, bases de datos operativas, fichas de pacientes, matrices Excel originales, archivos de cuentas ni registros de ejecución.** `.env.example` es una plantilla sin secretos.
 
 Las pruebas utilizan una base independiente denominada `aph_test`. Los ejemplos y datos de demostración del piloto no deben confundirse con información asistencial validada.
+
+## Estado de la documentación
+
+La documentación aún es parcial. Consultar la [revisión por requisito](docs/estado-documentacion.md) y el [registro de cambios](CHANGELOG.md). Los documentos de AppSheet y el diccionario de la matriz Excel son antecedentes, no describen el esquema físico MySQL vigente.

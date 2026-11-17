@@ -27,8 +27,8 @@
         <p><?= h(PasswordPolicy::DESCRIPTION) ?></p>
         <div class="grid">
             <div class="field"><label for="perfil-actual">Contraseña actual</label><input id="perfil-actual" type="password" name="clave_actual" autocomplete="current-password" maxlength="72"></div>
-            <div class="field"><label for="perfil-nueva">Contraseña nueva</label><input id="perfil-nueva" type="password" name="clave_nueva" autocomplete="new-password" minlength="6" maxlength="72"></div>
-            <div class="field"><label for="perfil-repetida">Confirmar contraseña nueva</label><input id="perfil-repetida" type="password" name="clave_repetida" autocomplete="new-password" minlength="6" maxlength="72"></div>
+            <div class="field"><label for="perfil-nueva">Contraseña nueva</label><input id="perfil-nueva" type="password" name="clave_nueva" autocomplete="new-password" minlength="8" maxlength="72"></div>
+            <div class="field"><label for="perfil-repetida">Confirmar contraseña nueva</label><input id="perfil-repetida" type="password" name="clave_repetida" autocomplete="new-password" minlength="8" maxlength="72"></div>
         </div>
     </section>
     <button class="primary emphasis"><?= icon('check') ?> Guardar perfil</button>
