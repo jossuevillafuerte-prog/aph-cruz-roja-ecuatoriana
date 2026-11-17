@@ -1,0 +1,50 @@
+erDiagram
+    usuarios ||--o{ operadores : provincia
+    usuarios ||--o{ recursos : provincia
+    usuarios ||--o{ atenciones : provincia
+    recursos o|--o{ atenciones : recurso_id
+    operadores o|--o{ atenciones : responsable_id
+    operadores o|--o{ accounts : operator_id
+    atenciones ||--o{ cambios : atencion
+    accounts ||--o| account_invitations : account_id_unico
+    usuarios {
+        varchar provincia PK
+    }
+    operadores {
+        bigint id PK
+        varchar provincia FK
+        varchar usuario
+    }
+    recursos {
+        bigint id PK
+        varchar provincia FK
+        varchar numero
+    }
+    atenciones {
+        bigint id PK
+        varchar provincia FK
+        bigint recurso_id FK
+        bigint responsable_id FK
+        int version
+        json datos
+        varchar eliminado
+    }
+    cambios {
+        bigint id PK
+        bigint atencion FK
+        varchar autor
+        longtext detalle
+    }
+    accounts {
+        bigint id PK
+        varchar username UK
+        varchar email UK
+        bigint operator_id FK
+        varchar province
+        varchar role
+    }
+    account_invitations {
+        bigint id PK
+        bigint account_id FK,UK
+        varchar ticket_hash UK
+    }

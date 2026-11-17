@@ -84,7 +84,7 @@ La aplicación conserva parte de los formularios originales adaptados a Laravel;
 
 El sistema funciona como **piloto local**. Subirlo a GitHub guarda y versiona el código; no lo publica como servicio accesible en internet.
 
-Para un despliegue institucional deben prepararse PHP y sus extensiones, Composer, MySQL, la configuración `.env`, la clave de aplicación, las migraciones y el aprovisionamiento autorizado de cuentas. La raíz del servidor web debe ser exclusivamente `aph-laravel/public/`. Consultar el [README técnico](aph-laravel/README.md), teniendo en cuenta que sus apartados históricos quedan sustituidos por la [política vigente](aph-laravel/docs/Roles-y-activacion.md).
+Para un despliegue institucional deben prepararse PHP y sus extensiones, Composer, MySQL, la configuración `.env`, la clave de aplicación, las migraciones y el aprovisionamiento autorizado de cuentas. La raíz del servidor web debe ser exclusivamente `aph-laravel/public/`. Consultar la [guía de instalación](docs/instalacion-vps.md), la [configuración](docs/configuracion.md) y la [política vigente](docs/seguridad.md).
 
 Permanecen pendientes la URL pública HTTPS, el servicio institucional de correo y la validación del despliegue definitivo, incluyendo respaldos y restauración, protección del almacenamiento y procedimientos de tratamiento de datos médicos. Las referencias a normas ISO en la documentación son orientativas y no acreditan certificación.
 
@@ -96,4 +96,4 @@ Las pruebas utilizan una base independiente denominada `aph_test`. Los ejemplos 
 
 ## Estado de la documentación
 
-La documentación aún es parcial. Consultar la [revisión por requisito](docs/estado-documentacion.md) y el [registro de cambios](CHANGELOG.md). Los documentos de AppSheet y el diccionario de la matriz Excel son antecedentes, no describen el esquema físico MySQL vigente.
+La documentación del sistema actual está organizada en el [índice técnico y operativo](docs/README.md): arquitectura, rutas, diccionario MySQL, ERD, manual por rol, instalación y recuperación. Consultar el [estado de entrega y decisiones pendientes](docs/estado-documentacion.md) y el [registro de cambios](CHANGELOG.md). Las guías no equivalen a despliegue productivo ni certificación ISO.

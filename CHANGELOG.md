@@ -16,6 +16,9 @@ Formato inspirado en Keep a Changelog. El proyecto aún no tiene versiones etiqu
 - Mensajes diferenciados para requisitos, contraseña filtrada e indisponibilidad del verificador externo.
 
 ### Documentación
+- Paquete documental 1.0: arquitectura, rutas/permisos, diccionario físico (18 tablas, 113 campos, 8 FK), ERD y JSON institucional.
+- Guías de instalación, configuración, operaciones/recuperación, seguridad, manual por rol y calidad/trazabilidad.
+- Índice central y separación explícita de antecedentes históricos y política vigente.
 - Revisión de cobertura técnica, operaciones, repositorio y normas en docs/estado-documentacion.md.
 - Política vigente actualizada; documentos anteriores identificados como históricos.
 

@@ -1,3 +1,5 @@
+> **ARCHIVO HISTÓRICO.** Describe la entrega anterior, incluidas funciones MFA ya retiradas. Consultar [documentación vigente](../../docs/README.md), [seguridad actual](../../docs/seguridad.md) y [evidencia de pruebas](../../docs/calidad-y-trazabilidad.md).
+
 > Documento histórico de la entrega anterior. La política vigente de roles y acceso está en Roles-y-activacion.md. Se retiró MFA y las cuentas provinciales ahora son técnicos.
 
 # Verificación de la migración y seguridad
