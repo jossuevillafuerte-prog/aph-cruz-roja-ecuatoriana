@@ -385,10 +385,15 @@ if ($isAdmin) {
 <?php } elseif (! $editing) { ?>
 
     <?php
-        $query = $db->prepare('SELECT * FROM atenciones WHERE provincia=? AND eliminado IS NULL ORDER BY id DESC');
+        $query = $db->prepare('SELECT estado, COUNT(*) FROM atenciones WHERE provincia=? AND eliminado IS NULL GROUP BY estado');
         $query->execute([$province]);
+        $counts = array_map(intval(...), $query->fetchAll(PDO::FETCH_KEY_PAIR));
+        $lastPage = max(1, (int) ceil(($filter === '' ? array_sum($counts) : $counts[$filter] ?? 0) / ATTENTIONS_PER_PAGE));
+        $page = min($lastPage, filter_var($_GET['pagina'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1);
+        $query = $db->prepare("SELECT id, version, estado, datos FROM atenciones WHERE provincia=? AND eliminado IS NULL AND (?='' OR estado=?) ORDER BY id DESC LIMIT ".ATTENTIONS_PER_PAGE.' OFFSET '.(($page - 1) * ATTENTIONS_PER_PAGE));
+        $query->execute([$province, $filter, $filter]);
         $records = $query->fetchAll();
-        $counts = array_count_values(array_column($records, 'estado'));
+        $pageUrl = static fn (int $number): string => '/?'.http_build_query(['vista' => 'atenciones', 'estado' => $filter, 'pagina' => $number]);
         ?>
     <?php if (isset($_GET['eliminada'])) { ?><p class="success" role="status">Atención eliminada.</p><?php } ?>
     <div class="heading dashboard-heading"><div><p class="eyebrow">ATENCIÓN PREHOSPITALARIA</p><h1>Atenciones de <?= h($territory['nombre']) ?></h1><p class="heading-description">Registro y seguimiento de atenciones prehospitalarias.</p></div>
@@ -398,7 +403,7 @@ if ($isAdmin) {
     <?php } ?>
     <a class="button primary emphasis" href="?vista=nueva"><?= icon('add') ?> Nueva atención</a></div></div>
     <nav class="filter-bar attention-kpis" aria-label="Resumen de atenciones">
-    <?php foreach ([['', 'all', 'list', 'Total de atenciones registradas', count($records)], ['Cerrada', 'closed', 'check', 'Atenciones cerradas', $counts['Cerrada'] ?? 0], ['Pendiente', 'pending', 'clock', 'Atenciones pendientes', $counts['Pendiente'] ?? 0]] as [$key,$style,$symbol,$label,$count]) { ?>
+    <?php foreach ([['', 'all', 'list', 'Total de atenciones registradas', array_sum($counts)], ['Cerrada', 'closed', 'check', 'Atenciones cerradas', $counts['Cerrada'] ?? 0], ['Pendiente', 'pending', 'clock', 'Atenciones pendientes', $counts['Pendiente'] ?? 0]] as [$key,$style,$symbol,$label,$count]) { ?>
         <a class="button status emphasis <?= h($style) ?>" data-state="<?= h($key) ?>" data-count="<?= h($count) ?>" href="<?= h('/?'.http_build_query(['vista' => 'atenciones', 'estado' => $filter === $key ? '' : $key])) ?>" aria-pressed="<?= $filter === $key ? 'true' : 'false' ?>"><?= icon($symbol) ?><span><?= h($label) ?><strong><?= h($count) ?></strong></span></a>
     <?php } ?>
     </nav>
@@ -410,29 +415,25 @@ if ($isAdmin) {
     </div><div class="card table"><table>
         <thead><tr><th>Hoja de atención</th><th>Fecha</th><th>Cantón</th><th>Código APH</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody>
-        <?php $shown = 0;
-        foreach ($records as $item) {
-            if (in_array($filter, ['Pendiente', 'Cerrada'], true) && $filter !== $item['estado']) {
-                continue;
-            }
-            $shown++;
-            $values = json_decode($item['datos'], true, 512, JSON_THROW_ON_ERROR);
+        <?php foreach ($records as $item) {
+            $values = json_decode($item['datos'], true, 512, JSON_THROW_ON_ERROR) + array_fill_keys(array_keys(FIELDS), '');
             ?>
-            <tr class="<?= $item['estado'] === 'Pendiente' ? 'attention-pending' : '' ?>"><td><a href="?id=<?= h($item['id']) ?>&amp;return_estado=<?= h($filter) ?>"><?= h($values['K'] ?: 'Sin número de hoja') ?></a></td>
+            <tr class="<?= $item['estado'] === 'Pendiente' ? 'attention-pending' : '' ?>"><td><a href="?id=<?= h($item['id']) ?>&amp;return_estado=<?= h($filter) ?>&amp;return_page=<?= h($page) ?>"><?= h($values['K'] ?: 'Sin número de hoja') ?></a></td>
             <td><?= h($values['B']) ?></td><td><?= h($values['G'] ?: '—') ?></td>
             <td><?= h($values['C'] ?: '—') ?></td><td><span class="badge status <?= $statusClasses[$item['estado']] ?>"><?= icon($item['estado'] === 'Cerrada' ? 'check' : 'clock') ?> <?= h($item['estado']) ?></span></td>
             <td><div class="row-actions">
                 <?php if (true) { ?>
-                    <a class="button icon-button" href="?id=<?= h($item['id']) ?>&amp;return_estado=<?= h($filter) ?>" aria-label="Editar hoja <?= h($values['K'] ?: 'sin número') ?>" title="Editar"><?= icon('edit') ?></a>
+                    <a class="button icon-button" href="?id=<?= h($item['id']) ?>&amp;return_estado=<?= h($filter) ?>&amp;return_page=<?= h($page) ?>" aria-label="Editar hoja <?= h($values['K'] ?: 'sin número') ?>" title="Editar"><?= icon('edit') ?></a>
                 <?php } ?>
                 <button type="button" class="button icon-button danger emphasis" data-delete-action="/?vista=eliminar&amp;id=<?= h($item['id']) ?>" data-version="<?= h($item['version']) ?>" data-province="<?= h($province) ?>" data-sheet="<?= h($values['K']) ?>" aria-label="Eliminar hoja <?= h($values['K'] ?: 'sin número') ?>" title="Eliminar"><?= icon('delete') ?></button>
                 <a class="button icon-button" href="?vista=imprimir&amp;id=<?= h($item['id']) ?>" aria-label="Imprimir hoja <?= h($values['K'] ?: 'sin número') ?> o guardar como PDF" title="Imprimir / PDF"><?= icon('print') ?></a>
             </div></td></tr>
-        <?php } if (! $shown) { ?>
+        <?php } if (! $records) { ?>
             <tr><td colspan="6">No hay atenciones para mostrar.</td></tr>
         <?php } ?>
         </tbody>
     </table></div>
+    <div class="actions"><?php if ($page > 1) { ?><a class="button emphasis" href="<?= h($pageUrl($page - 1)) ?>">Anterior</a><?php } ?><span>Página <?= h($page) ?> de <?= h($lastPage) ?></span><?php if ($page < $lastPage) { ?><a class="button emphasis" href="<?= h($pageUrl($page + 1)) ?>">Siguiente</a><?php } ?></div>
 <?php } else { ?>
 
     <div class="heading"><h1><?= $record ? 'Hoja de atención '.h($savedData['K'] ?: 'sin número') : 'Nueva atención' ?></h1>

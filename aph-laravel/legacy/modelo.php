@@ -17,6 +17,9 @@ const FIELDS = [
 ];
 const DERIVED = ['A', 'D', 'E', 'V'];
 const CLOSING_FIELDS = ['B', 'C', 'G', 'Y'];
+const DASHBOARD_FIELDS = ['B', 'D', 'F', 'G', 'K', 'M', 'O', 'P', 'Q', 'R', 'S', 'J', 'Z', 'AA', 'evento_lat', 'evento_lon', 'destino_lat', 'destino_lon', 'recurso_tipo'];
+const DASHBOARD_LIMIT = 10000;
+const ATTENTIONS_PER_PAGE = 30;
 const LOCATIONS = ['evento' => 'Ubicación del evento', 'destino' => 'Ubicación del destino'];
 
 function validateLocations(array $input, array $previous): array
@@ -307,4 +310,60 @@ function deleteAttention(PDO $db, string $province, array $record, array $accoun
         DB::rollBack();
         throw $error;
     }
+}
+
+function validDate(mixed $value): bool
+{
+    $date = is_string($value) ? DateTimeImmutable::createFromFormat('!Y-m-d', $value) : false;
+
+    return $date !== false && $date->format('Y-m-d') === $value;
+}
+
+/**
+ * @return array{desde: string, hasta: string, error: string}
+ */
+function dashboardPeriod(array $query): array
+{
+    if (($query['periodo'] ?? '') === 'todo') {
+        return ['desde' => '', 'hasta' => '', 'error' => ''];
+    }
+    $default = ['desde' => date('Y-m-d', strtotime('-12 months')), 'hasta' => date('Y-m-d'), 'error' => ''];
+    if (empty($query['desde']) && empty($query['hasta'])) {
+        return $default;
+    }
+    if (! validDate($query['desde'] ?? null) || ! validDate($query['hasta'] ?? null) || $query['desde'] > $query['hasta']) {
+        return ['error' => 'Las fechas del periodo no son válidas. Se muestran los últimos 12 meses.'] + $default;
+    }
+
+    return ['desde' => $query['desde'], 'hasta' => $query['hasta'], 'error' => ''];
+}
+
+/**
+ * Consulta solo los campos del panel: los datos personales y clínicos no salen de la base.
+ *
+ * @return array{total: int, rows: PDOStatement}
+ */
+function dashboardRecords(PDO $db, string $province, array $period): array
+{
+    $conditions = ['a.eliminado IS NULL'];
+    $parameters = [];
+    if ($province !== '') {
+        $conditions[] = 'a.provincia=?';
+        $parameters[] = $province;
+    }
+    if ($period['desde'] !== '') {
+        $conditions[] = 'a.fecha BETWEEN ? AND ?';
+        array_push($parameters, $period['desde'], $period['hasta']);
+    }
+    $where = implode(' AND ', $conditions);
+    $count = $db->prepare("SELECT COUNT(*) FROM atenciones a WHERE $where");
+    $count->execute($parameters);
+    $fields = implode(',', array_map(static fn (string $key): string => "'$key', JSON_EXTRACT(a.datos, '$.$key')", DASHBOARD_FIELDS));
+    $rows = $db->prepare("SELECT a.id, a.estado, a.provincia, r.tipo, JSON_OBJECT($fields) AS datos
+        FROM (SELECT id FROM atenciones a WHERE $where ORDER BY a.fecha DESC, a.id DESC LIMIT ".DASHBOARD_LIMIT.') AS selected
+        JOIN atenciones a ON a.id=selected.id
+        LEFT JOIN recursos r ON r.id=a.recurso_id AND r.provincia=a.provincia');
+    $rows->execute($parameters);
+
+    return ['total' => (int) $count->fetchColumn(), 'rows' => $rows];
 }

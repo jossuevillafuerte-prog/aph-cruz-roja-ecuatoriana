@@ -4,7 +4,10 @@ Formato inspirado en Keep a Changelog. El proyecto aún no tiene versiones etiqu
 
 ## [Sin publicar como versión] — 2026-11-25
 
-Requiere ejecutar `php artisan migrate` (columna `atenciones.solicitud`).
+Requiere ejecutar `php artisan migrate` (columnas `atenciones.solicitud` y `atenciones.fecha`, e índices).
+
+### Cambiado
+- El panel muestra los últimos 12 meses por defecto, con periodo configurable y un máximo de 10.000 atenciones. El listado provincial se pagina.
 
 ### Corregido
 - Pérdida de fichas al vencer la sesión o fallar la red, y de direcciones al marcar el mapa.

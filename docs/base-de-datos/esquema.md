@@ -91,10 +91,12 @@ Motor: `InnoDB`. Intercalación: `utf8mb4_unicode_ci`.
 | `responsable_id` | `bigint unsigned` | YES | `NULL` | — | Operador responsable vinculado; puede ser NULL históricamente. |
 | `eliminado` | `varchar(255)` | YES | `NULL` | — | Fecha ISO 8601 textual de borrado lógico; NULL indica visible. |
 | `solicitud` | `char(36)` | YES | `NULL` | — | Identificador del formulario de creación; evita fichas duplicadas por doble envío. |
+| `fecha` | `varchar(10)` | YES | — | VIRTUAL GENERATED | Fecha de atención (clave B) para filtrar por periodo. |
 
 ### Claves e índices
 
 - `atenciones_solicitud_unique`: UNIQUE (`solicitud`).
+- Índices (`provincia`,`eliminado`,`fecha`), (`provincia`,`eliminado`,`estado`), (`eliminado`,`fecha`) y (`eliminado`,`estado`).
 - `atenciones_provincia_id_index`: INDEX (`provincia`, `id`).
 - `atenciones_recurso_id_foreign`: INDEX (`recurso_id`).
 - `atenciones_responsable_id_foreign`: INDEX (`responsable_id`).

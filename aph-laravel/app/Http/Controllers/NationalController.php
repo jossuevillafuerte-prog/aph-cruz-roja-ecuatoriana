@@ -14,6 +14,9 @@ class NationalController extends Controller
         $this->validateOrRedirect($request, '/national', ['province' => ['nullable', Rule::in(array_keys($provinces))], 'estado' => ['nullable', Rule::in(['Pendiente', 'Cerrada'])]]);
         $province = $request->query('province') ?? '';
         $state = $request->query('estado') ?? '';
+        if ($request->query('view') !== 'atenciones') {
+            return view('users.national', compact('provinces', 'province'));
+        }
         $query = DB::table('atenciones')->whereNull('eliminado')->when($province, fn ($query) => $query->where('provincia', $province));
         $counts = (clone $query)->selectRaw('estado, COUNT(*) as total')->groupBy('estado')->pluck('total', 'estado')->all();
         $total = array_sum($counts);

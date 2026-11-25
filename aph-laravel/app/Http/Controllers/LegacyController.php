@@ -58,14 +58,14 @@ class LegacyController extends Controller
         $request->attributes->set('scope_province', $scope);
         $returnState = $request->query('return_estado', '');
         $returnState = in_array($returnState, ['Pendiente', 'Cerrada'], true) ? $returnState : '';
-        $context = ['return_estado' => $returnState];
-        $backQuery = ['vista' => 'atenciones', 'estado' => $returnState];
+        $returnPage = filter_var($request->query('return_page', 1), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
+        $context = ['return_estado' => $returnState, 'return_page' => $returnPage];
+        $backQuery = ['vista' => 'atenciones', 'estado' => $returnState] + ($returnPage > 1 ? ['pagina' => $returnPage] : []);
         $backPath = '/';
         if ($user->role === 'superadmin') {
-            $returnProvince = $request->query('return_province', $scope) ?? '';
+            $returnProvince = array_key_exists('return_province', $request->query()) ? $request->query('return_province') : $scope;
             $returnProvince = is_string($returnProvince) && isset($provinces[$returnProvince]) ? $returnProvince : '';
-            $returnPage = filter_var($request->query('return_page', 1), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
-            $context += ['return_province' => $returnProvince, 'return_page' => $returnPage];
+            $context += ['return_province' => $returnProvince];
             $backPath = '/national';
             $backQuery = ['view' => 'atenciones', 'province' => $returnProvince, 'estado' => $returnState, 'page' => $returnPage];
         }
@@ -88,7 +88,7 @@ class LegacyController extends Controller
             throw $e;
         }
         $body = ob_get_clean();
-        $body = preg_replace('/(<form\b[^>]*>)/i', '$1<input type="hidden" name="_province" value="'.htmlspecialchars($scope, ENT_QUOTES).'">', $body);
+        $body = preg_replace('/(<form\b[^>]*\bmethod="post"[^>]*>)/i', '$1<input type="hidden" name="_province" value="'.htmlspecialchars($scope, ENT_QUOTES).'">', $body);
         if ($_SESSION['credencial'] !== $request->session()->get('credential')) {
             $request->session()->put('credential', $_SESSION['credencial']);
             DB::table('sessions')->where('user_id', Auth::id())->where('id', '!=', $request->session()->getId())->delete();

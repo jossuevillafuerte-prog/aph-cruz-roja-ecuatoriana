@@ -1,16 +1,15 @@
 <?php
-$query = $db->prepare("SELECT a.id, a.estado, a.datos, a.provincia, r.tipo FROM atenciones a LEFT JOIN recursos r ON r.id=a.recurso_id AND r.provincia=a.provincia WHERE (? = '' OR a.provincia=?) AND a.eliminado IS NULL");
-$query->execute([$province, $province]);
-$analytics = [];
-foreach ($query as $row) {
+$period = dashboardPeriod(request()->query());
+['total' => $periodTotal, 'rows' => $dashboardRows] = dashboardRecords($db, $province, $period);
+$dashboardPath = auth()->user()->role === 'superadmin' ? '/national' : '/';
+$dashboardRecord = static function (array $row) use ($provinces): string {
     $data = json_decode($row['datos'], true, 512, JSON_THROW_ON_ERROR);
-    $safe = array_intersect_key($data, array_flip(['B', 'D', 'F', 'G', 'K', 'M', 'O', 'P', 'Q', 'R', 'S', 'J', 'Z', 'AA', 'evento_lat', 'evento_lon', 'destino_lat', 'destino_lon']));
-    $safe['provincia'] = $provinces[$row['provincia']]['nombre'];
-    $safe['id'] = (int) $row['id'];
-    $safe['estado'] = $row['estado'];
-    $safe['tipo'] = $data['recurso_tipo'] ?? $row['tipo'] ?? 'Sin tipo registrado';
-    $analytics[] = $safe;
-}
+    $type = $data['recurso_tipo'] ?? $row['tipo'] ?? 'Sin tipo registrado';
+    unset($data['recurso_tipo']);
+
+    return json_encode(['provincia' => $provinces[$row['provincia']]['nombre'] ?? $row['provincia'], 'id' => (int) $row['id'], 'estado' => $row['estado'], 'tipo' => $type] + array_filter($data, static fn ($value): bool => $value !== null && $value !== ''),
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
+};
 ?>
 <?php if (auth()->user()->role !== 'superadmin') { ?><h1>Panel principal</h1><?php } ?>
 <nav class="dashboard-shortcuts" aria-label="Accesos directos">
@@ -19,6 +18,16 @@ foreach ($query as $row) {
 <a class="button emphasis" href="<?= auth()->user()->role === 'superadmin' ? '/?vista=recursos&amp;select_province=1' : '/?vista=recursos' ?>"><?= icon('ambulance') ?><span>Recursos</span></a>
 <a class="button emphasis" href="<?= auth()->user()->role === 'superadmin' ? '/national?view=atenciones' : '/?vista=atenciones' ?>"><?= icon('list') ?><span>Atenciones</span></a>
 </nav>
+<form method="get" action="<?= $dashboardPath ?>" class="card actions module-controls">
+<label for="period-from">Desde</label><input id="period-from" type="date" name="desde" value="<?= h($period['desde']) ?>" required>
+<label for="period-to">Hasta</label><input id="period-to" type="date" name="hasta" value="<?= h($period['hasta']) ?>" required>
+<button class="button primary emphasis">Aplicar periodo</button>
+<a class="button emphasis" href="<?= $dashboardPath ?>">Últimos 12 meses</a>
+<a class="button emphasis" href="<?= $dashboardPath ?>?periodo=todo">Todo el historial</a>
+</form>
+<?php if ($period['error'] !== '') { ?><p class="errors" role="alert"><?= h($period['error']) ?></p><?php } ?>
+<?php if ($periodTotal > DASHBOARD_LIMIT) { ?><p class="errors" role="alert">Hay <?= h(number_format($periodTotal, 0, ',', '.')) ?> atenciones en el periodo y el panel muestra las <?= h(number_format(DASHBOARD_LIMIT, 0, ',', '.')) ?> más recientes. Acorta el periodo para ver totales exactos.</p><?php } ?>
+<p class="heading-description" id="period-summary"><?= $period['desde'] === '' ? 'Todo el historial' : 'Atenciones del '.h($period['desde']).' al '.h($period['hasta']) ?>: <?= h(number_format($periodTotal, 0, ',', '.')) ?>.</p>
 <div id="dashboard-filters" class="actions" aria-label="Filtros activos" hidden></div>
 <div id="dashboard-metrics" class="dashboard-breakdowns"></div>
 <div class="dashboard-breakdowns">
@@ -35,4 +44,8 @@ foreach ($query as $row) {
 <?php } ?>
 <div id="dashboard-charts" class="dashboard-breakdowns"></div>
 <noscript><p class="errors">Activa JavaScript para consultar los gráficos y filtros interactivos.</p></noscript>
-<script id="dashboard-data" type="application/json"><?= json_encode($analytics, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?></script>
+<script id="dashboard-data" type="application/json">[<?php $separator = '';
+foreach ($dashboardRows as $row) {
+    echo $separator, $dashboardRecord($row);
+    $separator = ',';
+} ?>]</script>
