@@ -157,7 +157,7 @@ No hay tareas schedule de negocio ni Jobs propios. No instalar Supervisor/cron c
 3. `php artisan down`; desplegar código/dependencias del commit, preservando .env y APP_KEY.
 4. Ejecutar `php artisan migrate --force`, reconstruir cachés y recargar PHP-FPM según plataforma.
 5. Probar login, ámbito provincial, ficha, recursos, mapas, PDF y salida con una cuenta de ensayo autorizada. Después `php artisan up` y prueba por HTTPS externo.
-6. Si falla, mantener mantenimiento y decidir retorno de código solo si el esquema sigue compatible. La migración unified_accounts no tiene down reversible: restaurar respaldo y APP_KEY cuando el esquema cambie de manera incompatible. Conciliar escrituras posteriores al respaldo; no descartarlas silenciosamente.
+6. Si falla, mantener mantenimiento y decidir retorno de código solo si el esquema sigue compatible. No usar migrate:rollback: las migraciones de cuentas, fichas y auditoría lo rechazan sin cambiar datos, y en producción está prohibido. Para revertir, restaurar respaldo y APP_KEY cuando el esquema cambie de manera incompatible. Conciliar escrituras posteriores al respaldo; no descartarlas silenciosamente.
 
 No se ha ejecutado este procedimiento en un servidor definitivo. Registrar resultados y aprobación conforme a [calidad](calidad-y-trazabilidad.md).
 

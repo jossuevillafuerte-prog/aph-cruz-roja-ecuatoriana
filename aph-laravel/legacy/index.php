@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
+use App\Security\Security;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 require_once __DIR__.'/modelo.php';
 require_once __DIR__.'/cuentas.php';
@@ -116,11 +119,12 @@ $editing = $view === 'nueva' || $record;
 $data = $record ? json_decode($record['datos'], true, 512, JSON_THROW_ON_ERROR) : [];
 $savedData = $data;
 $previousResponsible = $savedData['Y'] ?? '';
-$responsible = $previousResponsible !== '' ? $previousResponsible : $account['nombre'];
+$responsible = $previousResponsible !== '' ? $previousResponsible : accountLabel($account);
 $responsibleId = $record['responsable_id'] ?? ($previousResponsible === '' ? $account['id'] : null);
 $errors = [];
 $reason = '';
 $formVersion = (string) ($record['version'] ?? 0);
+$requestId = Str::isUuid($_POST['solicitud'] ?? null) ? strtolower($_POST['solicitud']) : (string) Str::uuid();
 $closed = ($record['estado'] ?? '') === 'Cerrada';
 $catalog = $editing ? catalog($territory) : [];
 $resourceInput = $resource ?? ['tipo' => 'Ambulancia'];
@@ -161,13 +165,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (! $errors) {
             try {
-                if ($resource) {
-                    $db->prepare('UPDATE recursos SET ubicacion=?, capacidad=?, combustible=?, tipo=? WHERE id=? AND provincia=?')
-                        ->execute([$resourceInput['ubicacion'], $resourceInput['capacidad'], $resourceInput['combustible'], $resourceInput['tipo'], $id, $province]);
-                } else {
-                    $db->prepare('INSERT INTO recursos (provincia,numero,ubicacion,capacidad,combustible,tipo) VALUES (?,?,?,?,?,?)')
-                        ->execute([$province, ...array_map(static fn ($key) => $resourceInput[$key], array_keys($resourceFields))]);
-                }
+                DB::transaction(function () use ($db, $resource, $resourceInput, $resourceFields, $province, $id): void {
+                    if ($resource) {
+                        $db->prepare('UPDATE recursos SET ubicacion=?, capacidad=?, combustible=?, tipo=? WHERE id=? AND provincia=?')
+                            ->execute([$resourceInput['ubicacion'], $resourceInput['capacidad'], $resourceInput['combustible'], $resourceInput['tipo'], $id, $province]);
+                    } else {
+                        $db->prepare('INSERT INTO recursos (provincia,numero,ubicacion,capacidad,combustible,tipo) VALUES (?,?,?,?,?,?)')
+                            ->execute([$province, ...array_map(static fn ($key) => $resourceInput[$key], array_keys($resourceFields))]);
+                    }
+                    Security::event('application_write', null, 'recurso:'.($resource ? $id : $db->lastInsertId()));
+                });
                 aphHeader('Location: ?vista=recursos&guardado=1', true, 303);
                 aphExit();
             } catch (PDOException $error) {
@@ -205,9 +212,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($resourceId !== null) {
             $data['recurso_tipo'] = ($record['recurso_id'] ?? null) === $resourceId
                 ? ($savedData['recurso_tipo'] ?? $resources[$resourceId]['tipo']) : $resources[$resourceId]['tipo'];
+        } elseif ($data['J'] !== '' && $data['J'] === ($savedData['J'] ?? '') && isset($savedData['recurso_tipo'])) {
+            $data['recurso_tipo'] = $savedData['recurso_tipo'];
         }
         [$locations, $locationErrors] = validateLocations($posted, $savedData);
-        $data += $locations;
+        $data += $locations + preservedData($savedData);
         $errors = array_merge($errors, $locationErrors);
         if (! $validResource) {
             $errors[] = 'Selecciona un recurso de tu provincia.';
@@ -223,7 +232,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (! $errors) {
             try {
-                $id = save($db, $province, $record ?: null, $data, $nextState, $reason ?: 'Registro de prueba', $resourceId, $account, $responsibleId);
+                $defaultReason = match (true) {
+                    ! $record => $nextState === 'Cerrada' ? 'Creación y cierre de atención' : 'Creación de atención',
+                    $nextState === 'Cerrada' => 'Cierre de atención',
+                    default => 'Actualización de atención pendiente',
+                };
+                $id = save($db, $province, $record ?: null, $data, $nextState, $reason !== '' ? $reason : $defaultReason, $resourceId, $account, $responsibleId, $requestId);
                 aphHeader('Location: ?id='.$id.'&guardado=1&'.$request->attributes->get('attention_return_context'), true, 303);
                 aphExit();
             } catch (DomainException $error) {
@@ -431,6 +445,7 @@ if ($isAdmin) {
     <form method="post">
         <input type="hidden" name="_token" value="<?= h($_SESSION['token']) ?>">
         <input type="hidden" name="version" value="<?= h($formVersion) ?>">
+        <?php if (! $record) { ?><input type="hidden" name="solicitud" value="<?= h($requestId) ?>"><?php } ?>
         <?php foreach ($groups as $title => $keys) { ?>
             <fieldset class="card"><legend><?= h($title) ?></legend><div class="grid">
             <?php foreach ($keys as $key) {

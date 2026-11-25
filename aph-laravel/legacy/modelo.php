@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use App\Security\Security;
 use Illuminate\Support\Facades\DB;
 
 const FIELDS = [
@@ -181,53 +182,107 @@ function validate(array $input, array $catalog, bool $closed, array $previous = 
     return [$data, $errors];
 }
 
-function save(PDO $db, string $province, ?array $record, array $data, string $state, string $reason, ?int $resourceId, array $operator, ?int $owner): int
+function locationKeys(): array
 {
-    $db->beginTransaction();
-    try {
-        $encoded = json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-        if ($record) {
-            $query = $db->prepare('UPDATE atenciones SET datos=?, estado=?, recurso_id=?, responsable_id=?, version=version+1 WHERE id=? AND version=? AND provincia=? AND eliminado IS NULL');
-            $query->execute([$encoded, $state, $resourceId, $owner, $record['id'], $record['version'], $province]);
-            if ($query->rowCount() !== 1) {
-                throw new DomainException('Otra edición se guardó primero. Abre de nuevo la atención.');
-            }
-            $id = (int) $record['id'];
-        } else {
-            $db->prepare('INSERT INTO atenciones (version,estado,datos,provincia,recurso_id,responsable_id) VALUES (1,?,?,?,?,?)')
-                ->execute([$state, $encoded, $province, $resourceId, $owner]);
-            $id = (int) $db->lastInsertId();
-        }
-        $previous = $record ? json_decode($record['datos'], true, 512, JSON_THROW_ON_ERROR) : [];
-        $changes = ['estado' => [$record['estado'] ?? '', $state]];
-        if (($record['recurso_id'] ?? null) !== $resourceId) {
-            $changes['Vínculo de recurso'] = [(string) ($record['recurso_id'] ?? ''), (string) $resourceId];
-        }
-        foreach (FIELDS as $key => $label) {
-            $value = $data[$key];
-            $old = $previous[$key] ?? '';
-            if ($old !== $value) {
-                $changes[$label] = [$old, $value];
-            }
-        }
-        foreach (LOCATIONS as $key => $label) {
-            $lat = $key.'_lat';
-            $lon = $key.'_lon';
-            $old = isset($previous[$lat], $previous[$lon]) ? $previous[$lat].', '.$previous[$lon] : '';
-            $new = isset($data[$lat], $data[$lon]) ? $data[$lat].', '.$data[$lon] : '';
-            if ($old !== $new) {
-                $changes[$label] = [$old, $new];
-            }
-        }
-        $db->prepare('INSERT INTO cambios (atencion,fecha,autor,motivo,detalle) VALUES (?,?,?,?,?)')
-            ->execute([$id, date('c'), accountLabel($operator), $reason, json_encode($changes, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]);
-        $db->commit();
-
-        return $id;
-    } catch (Throwable $error) {
-        $db->rollBack();
-        throw $error;
+    $keys = [];
+    foreach (array_keys(LOCATIONS) as $key) {
+        array_push($keys, $key.'_lat', $key.'_lon');
     }
+
+    return $keys;
+}
+
+function preservedData(array $savedData): array
+{
+    return array_diff_key($savedData, FIELDS, array_flip(locationKeys()), ['recurso_tipo' => true]);
+}
+
+function historyValue(mixed $value): string
+{
+    return is_scalar($value) || $value === null ? (string) $value : json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+}
+
+function changesBetween(array $previous, array $data): array
+{
+    $changes = [];
+    foreach (FIELDS as $key => $label) {
+        $value = $data[$key];
+        $old = $previous[$key] ?? '';
+        if ($old !== $value) {
+            $changes[$label] = [$old, $value];
+        }
+    }
+    foreach (LOCATIONS as $key => $label) {
+        $lat = $key.'_lat';
+        $lon = $key.'_lon';
+        $old = isset($previous[$lat], $previous[$lon]) ? $previous[$lat].', '.$previous[$lon] : '';
+        $new = isset($data[$lat], $data[$lon]) ? $data[$lat].', '.$data[$lon] : '';
+        if ($old !== $new) {
+            $changes[$label] = [$old, $new];
+        }
+    }
+    foreach (array_diff_key($data + $previous, FIELDS, array_flip(locationKeys())) as $key => $value) {
+        $old = historyValue($previous[$key] ?? '');
+        $new = historyValue($data[$key] ?? '');
+        if ($old !== $new) {
+            $changes[$key] = [$old, $new];
+        }
+    }
+
+    return $changes;
+}
+
+function save(PDO $db, string $province, ?array $record, array $data, string $state, string $reason, ?int $resourceId, array $operator, ?int $owner, ?string $requestId = null): int
+{
+    $encoded = json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    try {
+        return DB::transaction(function () use ($db, $province, $record, $data, $encoded, $state, $reason, $resourceId, $operator, $owner, $requestId): int {
+            if ($record) {
+                $query = $db->prepare('UPDATE atenciones SET datos=?, estado=?, recurso_id=?, responsable_id=?, version=version+1 WHERE id=? AND version=? AND provincia=? AND eliminado IS NULL');
+                $query->execute([$encoded, $state, $resourceId, $owner, $record['id'], $record['version'], $province]);
+                if ($query->rowCount() !== 1) {
+                    throw new DomainException('Otra edición se guardó primero. Abre de nuevo la atención.');
+                }
+                $id = (int) $record['id'];
+            } else {
+                $db->prepare('INSERT INTO atenciones (version,estado,datos,provincia,recurso_id,responsable_id,solicitud) VALUES (1,?,?,?,?,?,?)')
+                    ->execute([$state, $encoded, $province, $resourceId, $owner, $requestId]);
+                $id = (int) $db->lastInsertId();
+            }
+            $previous = $record ? json_decode($record['datos'], true, 512, JSON_THROW_ON_ERROR) : [];
+            $changes = ['estado' => [$record['estado'] ?? '', $state]];
+            if (($record['recurso_id'] ?? null) !== $resourceId) {
+                $changes['Vínculo de recurso'] = [(string) ($record['recurso_id'] ?? ''), (string) $resourceId];
+            }
+            $changes += changesBetween($previous, $data);
+            $db->prepare('INSERT INTO cambios (atencion,fecha,autor,motivo,detalle) VALUES (?,?,?,?,?)')
+                ->execute([$id, date('c'), accountLabel($operator), $reason, json_encode($changes, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]);
+            Security::event('application_write', null, 'atencion:'.$id);
+
+            return $id;
+        });
+    } catch (PDOException $error) {
+        if ($record || $requestId === null || ($error->errorInfo[0] ?? '') !== '23000') {
+            throw $error;
+        }
+
+        return repeatedRequest($db, $province, $requestId, $data, $state) ?? throw $error;
+    }
+}
+
+function repeatedRequest(PDO $db, string $province, string $requestId, array $data, string $state): ?int
+{
+    $query = $db->prepare('SELECT id, estado, datos FROM atenciones WHERE solicitud=? AND provincia=?');
+    $query->execute([$requestId, $province]);
+    $existing = $query->fetch(PDO::FETCH_ASSOC);
+    if (! $existing) {
+        return null;
+    }
+    if ($existing['estado'] !== $state || json_decode($existing['datos'], true, 512, JSON_THROW_ON_ERROR) != $data) {
+        throw new DomainException('Esta atención ya se guardó con otros datos y lo que ves aquí no se guardó. Ábrela desde Atenciones para corregirla (registro '.$existing['id'].').');
+    }
+
+    return (int) $existing['id'];
 }
 
 function deleteAttention(PDO $db, string $province, array $record, array $account): bool
@@ -244,6 +299,7 @@ function deleteAttention(PDO $db, string $province, array $record, array $accoun
         }
         $db->prepare('INSERT INTO cambios (atencion,fecha,autor,motivo,detalle) VALUES (?,?,?,?,?)')
             ->execute([$record['id'], $date, accountLabel($account), 'Eliminación de atención', json_encode(['Visibilidad' => ['Activa', 'Eliminada']], JSON_THROW_ON_ERROR)]);
+        Security::event('application_write', null, 'eliminar:'.$record['id']);
         DB::commit();
 
         return true;

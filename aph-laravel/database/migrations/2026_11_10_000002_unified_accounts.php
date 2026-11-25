@@ -9,6 +9,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $this->assertIdentitiesCanBeUnified();
         Schema::create('accounts', function (Blueprint $t) {
             $t->id();
             $t->string('username', 40)->unique();
@@ -34,26 +35,52 @@ return new class extends Migration
             $t->timestamp('expires_at');
             $t->timestamp('sent_at');
         });
-        DB::transaction(function () {
-            foreach (DB::table('operadores')->get() as $o) {
-                if (DB::table('accounts')->where('username', $o->usuario)->exists()) {
-                    throw new RuntimeException('Usuario duplicado entre provincias: resolver antes de migrar.');
+        try {
+            DB::transaction(function () {
+                foreach (DB::table('operadores')->get() as $o) {
+                    if (DB::table('accounts')->where('username', $o->usuario)->exists()) {
+                        throw new RuntimeException('Usuario duplicado entre provincias: resolver antes de migrar.');
+                    }
+                    $name = DB::table('perfiles')->where('provincia', $o->provincia)->where('usuario', $o->usuario)->value('nombre') ?? $o->nombre;
+                    DB::table('accounts')->insert(['username' => $o->usuario, 'name' => $name, 'province' => $o->provincia, 'operator_id' => $o->id, 'password' => $o->clave, 'active' => $o->activo, 'legacy_access' => true, 'revision' => $o->revision, 'created_at' => now(), 'updated_at' => now()]);
                 }
-                $name = DB::table('perfiles')->where('provincia', $o->provincia)->where('usuario', $o->usuario)->value('nombre') ?? $o->nombre;
-                DB::table('accounts')->insert(['username' => $o->usuario, 'name' => $name, 'province' => $o->provincia, 'operator_id' => $o->id, 'password' => $o->clave, 'active' => $o->activo, 'legacy_access' => true, 'revision' => $o->revision, 'created_at' => now(), 'updated_at' => now()]);
-            }
-            foreach (DB::table('usuarios')->get() as $p) {
-                if (DB::table('accounts')->where('username', $p->provincia)->exists()) {
-                    throw new RuntimeException('Usuario provincial duplicado.');
+                foreach (DB::table('usuarios')->get() as $p) {
+                    if (DB::table('accounts')->where('username', $p->provincia)->exists()) {
+                        throw new RuntimeException('Usuario provincial duplicado.');
+                    }
+                    $name = 'Técnico provincial APH · '.$p->provincia;
+                    $id = DB::table('operadores')->insertGetId(['provincia' => $p->provincia, 'usuario' => $p->provincia, 'nombre' => $name, 'perfil' => 'Técnico provincial APH', 'clave' => $p->clave, 'activo' => 1, 'revision' => 0]);
+                    DB::table('accounts')->insert(['username' => $p->provincia, 'name' => $name, 'province' => $p->provincia, 'operator_id' => $id, 'password' => $p->clave, 'active' => true, 'legacy_access' => true, 'created_at' => now(), 'updated_at' => now()]);
                 }
-                $name = 'Técnico provincial APH · '.$p->provincia;
-                $id = DB::table('operadores')->insertGetId(['provincia' => $p->provincia, 'usuario' => $p->provincia, 'nombre' => $name, 'perfil' => 'Técnico provincial APH', 'clave' => $p->clave, 'activo' => 1, 'revision' => 0]);
-                DB::table('accounts')->insert(['username' => $p->provincia, 'name' => $name, 'province' => $p->provincia, 'operator_id' => $id, 'password' => $p->clave, 'active' => true, 'legacy_access' => true, 'created_at' => now(), 'updated_at' => now()]);
-            }
-            DB::table('sessions')->delete();
-            // Secrets belonged to the retired authentication method and are no longer usable.
-            DB::table('auth_security')->delete();
-        });
+                DB::table('sessions')->delete();
+                // Secrets belonged to the retired authentication method and are no longer usable.
+                DB::table('auth_security')->delete();
+            });
+        } catch (Throwable $error) {
+            // MySQL no revierte la creación de tablas: se retiran para poder repetir la migración.
+            Schema::dropIfExists('account_invitations');
+            Schema::dropIfExists('accounts');
+            throw $error;
+        }
+    }
+
+    /**
+     * Comprueba los datos antes de crear tablas.
+     */
+    private function assertIdentitiesCanBeUnified(): void
+    {
+        $duplicates = DB::table('operadores')->select('usuario')->groupBy('usuario')->havingRaw('COUNT(*) > 1')->pluck('usuario');
+        $provincial = DB::table('operadores')->join('usuarios', 'usuarios.provincia', '=', 'operadores.usuario')->pluck('operadores.usuario');
+        $conflicts = $duplicates->merge($provincial)->unique();
+        if ($conflicts->isNotEmpty()) {
+            throw new RuntimeException('Usuarios duplicados: resolver antes de migrar ('.$conflicts->implode(', ').').');
+        }
+        $longNames = DB::table('operadores')->leftJoin('perfiles', fn ($join) => $join->on('perfiles.provincia', '=', 'operadores.provincia')->on('perfiles.usuario', '=', 'operadores.usuario'))
+            ->whereRaw('CHAR_LENGTH(COALESCE(perfiles.nombre, operadores.nombre)) > 200')->pluck('operadores.usuario')
+            ->merge(DB::table('usuarios')->whereRaw('CHAR_LENGTH(provincia) > 40')->pluck('provincia'));
+        if ($longNames->isNotEmpty()) {
+            throw new RuntimeException('Nombres o usuarios demasiado largos: acortar antes de migrar ('.$longNames->implode(', ').').');
+        }
     }
 
     public function down(): void

@@ -39,10 +39,10 @@ Fuentes: routes/web.php, bootstrap/app.php y `php artisan route:list --json --ex
 | perfil | GET / POST | Nombre, avatar y contraseña propia. |
 | avatar | GET | Binario de avatar propio o 404. |
 | operadores | GET | Técnico: 403; nacional: redirección a /users. |
-| cie&q=texto&pagina=N | GET | JSON de catálogo: items y total, páginas de 50. |
+| cie&q=texto&pagina=N | GET | JSON de catálogo: items y total, páginas de 50. No requiere provincia. |
 | direccion | POST | lat, lon y CSRF; JSON direccion, puede ser cadena vacía. |
-| exportar | GET | Descarga XLSX de cerradas. |
-| geojson | GET | FeatureCollection de cerradas con coordenadas. |
+| exportar | GET | Descarga XLSX de cerradas. El superadministrador indica province. |
+| geojson | GET | FeatureCollection de cerradas con coordenadas. El superadministrador indica province. |
 
 ## Matriz de autorización
 

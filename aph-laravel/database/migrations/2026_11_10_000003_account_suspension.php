@@ -13,6 +13,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('accounts', fn (Blueprint $t) => $t->dropColumn('disabled_at'));
+        throw new RuntimeException('Restaurar copia de seguridad para revertir: esta migración contiene datos de cuentas, fichas o auditoría.');
     }
 };

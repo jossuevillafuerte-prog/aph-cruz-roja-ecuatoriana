@@ -28,7 +28,7 @@
 | `V` | Descripcion_Diagnostico_Codigo_CIE_10 | Descripción derivada del código U. |
 | `W` | Localidad_destino | Destino textual, normalmente completado por mapa. |
 | `X` | Nombres_medico_recepcion_paciente | Nombre del médico receptor. |
-| `Y` | Responsable | Responsable asignado por servidor al crear; se conserva al corregir. No campo editable libre. |
+| `Y` | Responsable | Responsable asignado por servidor al crear; se conserva al corregir. Desde el 25/11/2026 incluye el usuario, «Nombre (usuario)». No campo editable libre. |
 | `Z` | km_salida | Kilometraje de salida no negativo. |
 | `AA` | km_llegada | Kilometraje de llegada no negativo; si cambia, no menor que Z. |
 | `AB` | combustible_salida | Nivel de combustible de salida del catálogo. |
@@ -42,6 +42,9 @@
 | evento_lat / destino_lat | número o null | Latitud de referencia, −90 a 90; redondeada a seis decimales. |
 | evento_lon / destino_lon | número o null | Longitud de referencia, −180 a 180; redondeada a seis decimales. |
 | recurso_tipo | cadena | Copia del tipo de recurso para conservar contexto histórico. |
+| demo_lote | cadena | Opcional. Marca una ficha ficticia; la impresión muestra el aviso. |
+
+Las claves no listadas se conservan al guardar y sus cambios quedan en el historial.
 
 Los pares de coordenadas se validan juntos. Si no llegan al actualizar, se conservan los anteriores; ambos campos vacíos los limpian. GeoJSON exporta `[longitud, latitud]`; Leaflet usa `[latitud, longitud]`. No intercambiar el orden.
 

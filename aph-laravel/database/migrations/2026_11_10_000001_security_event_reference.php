@@ -16,6 +16,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('security_events', fn (Blueprint $t) => $t->dropColumn(['reference', 'target']));
+        throw new RuntimeException('Restaurar copia de seguridad para revertir: esta migración contiene datos de cuentas, fichas o auditoría.');
     }
 };

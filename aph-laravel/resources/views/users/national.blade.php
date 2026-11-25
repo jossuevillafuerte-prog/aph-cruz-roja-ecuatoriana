@@ -12,6 +12,11 @@ ob_start();require base_path('legacy/dashboard-vista.php');$dashboard=ob_get_cle
 @endphp
 {!! $dashboard !!}
 @else
+@php($provinceQuery=$province ? '&'.http_build_query(['province'=>$province]) : '')
+<div class="actions"><a class="button primary emphasis" href="/?vista=nueva{{ $provinceQuery ?: '&select_province=1' }}">{!! icon('add') !!} Nueva atención</a>
+@if($province)<a class="button" href="/?vista=exportar{{ $provinceQuery }}">{!! icon('download') !!} Exportar cerradas de {{ $provinces[$province]['nombre'] }} a Excel</a>
+<a class="button" href="/?vista=geojson{{ $provinceQuery }}">{!! icon('pin') !!} Exportar ubicaciones de {{ $provinces[$province]['nombre'] }} (GeoJSON)</a>
+@else<small>Filtra por una provincia para exportar a Excel o GeoJSON.</small>@endif</div>
 <nav class="filter-bar attention-kpis" aria-label="Resumen de atenciones">
 @foreach([['','all','list','Total de atenciones registradas',$total],['Cerrada','closed','check','Atenciones cerradas',$counts['Cerrada']??0],['Pendiente','pending','clock','Atenciones pendientes',$counts['Pendiente']??0]] as [$key,$style,$symbol,$label,$count])
 <a class="button status emphasis {{ $style }}" data-state="{{ $key }}" data-count="{{ $count }}" href="{{ '/national?'.http_build_query(['view'=>'atenciones','province'=>$province,'estado'=>$state===$key?'':$key]) }}" aria-pressed="{{ $state===$key?'true':'false' }}">{!! icon($symbol) !!}<span>{{ $label }}<strong>{{ $count }}</strong></span></a>

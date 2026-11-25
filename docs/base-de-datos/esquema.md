@@ -90,9 +90,11 @@ Motor: `InnoDB`. Intercalación: `utf8mb4_unicode_ci`.
 | `recurso_id` | `bigint unsigned` | YES | `NULL` | — | Unidad asignada; puede ser NULL en datos históricos. |
 | `responsable_id` | `bigint unsigned` | YES | `NULL` | — | Operador responsable vinculado; puede ser NULL históricamente. |
 | `eliminado` | `varchar(255)` | YES | `NULL` | — | Fecha ISO 8601 textual de borrado lógico; NULL indica visible. |
+| `solicitud` | `char(36)` | YES | `NULL` | — | Identificador del formulario de creación; evita fichas duplicadas por doble envío. |
 
 ### Claves e índices
 
+- `atenciones_solicitud_unique`: UNIQUE (`solicitud`).
 - `atenciones_provincia_id_index`: INDEX (`provincia`, `id`).
 - `atenciones_recurso_id_foreign`: INDEX (`recurso_id`).
 - `atenciones_responsable_id_foreign`: INDEX (`responsable_id`).
@@ -394,7 +396,7 @@ Motor: `InnoDB`. Intercalación: `utf8mb4_unicode_ci`.
 | `event` | `varchar(60)` | NO | `—` | — | Tipo de evento de auditoría. |
 | `ip` | `varchar(45)` | YES | `NULL` | — | IP observada por Laravel; depende de proxy confiable. |
 | `created_at` | `timestamp` | NO | `—` | — | Fecha de creación; en jobs/job_batches es Unix, en cuentas/auditoría timestamp. |
-| `reference` | `varchar(300)` | YES | `NULL` | — | Referencia administrativa opcional. |
+| `reference` | `varchar(300)` | YES | `NULL` | — | Detalle opcional; en profile_name_changed, nombre anterior y nuevo. |
 | `target` | `varchar(80)` | YES | `NULL` | — | Objetivo textual de auditoría, ej. account:ID; sin FK. |
 
 ### Claves e índices

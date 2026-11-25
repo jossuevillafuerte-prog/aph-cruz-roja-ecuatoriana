@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 use App\Security\PasswordPolicy;
+use App\Security\Security;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 const OPERATOR_ROLES = ['Técnico APH', 'Operador de cabina APH'];
 
@@ -43,9 +45,11 @@ function saveProfile(PDO $db, string $province, array $account, array $input, ?a
     $errors = [];
     $image = null;
     $mime = null;
-    $newCredential = null;
     if ($name === '' || strlen($name) > 200) {
         $errors[] = 'Ingresa un nombre de hasta 200 bytes.';
+    }
+    if ($name !== $account['nombre'] && strpbrk($name, '()') !== false) {
+        $errors[] = 'El nombre no puede incluir paréntesis: se reservan para identificar al usuario.';
     }
     if ($changePassword) {
         if (! password_verify($current, $account['clave'])) {
@@ -75,40 +79,40 @@ function saveProfile(PDO $db, string $province, array $account, array $input, ?a
         return [$errors, null];
     }
 
-    $db->beginTransaction();
     try {
-        if ($changePassword) {
-            $hash = password_hash($new, PASSWORD_DEFAULT);
-            $query = $db->prepare('UPDATE accounts SET password=?, revision=revision+1, updated_at=NOW() WHERE id=? AND password=? AND revision=? AND active=1');
-            $query->execute([$hash, auth()->id(), $account['clave'], $account['revision']]);
-            if ($query->rowCount() !== 1) {
-                $db->rollBack();
-
-                return [['La cuenta cambió durante la edición. Vuelve a iniciar sesión.'], null];
+        return DB::transaction(function () use ($db, $account, $input, $name, $new, $changePassword, $image, $mime): array {
+            $newCredential = null;
+            if ($changePassword) {
+                $hash = password_hash($new, PASSWORD_DEFAULT);
+                $query = $db->prepare('UPDATE accounts SET password=?, revision=revision+1, updated_at=NOW() WHERE id=? AND password=? AND revision=? AND active=1');
+                $query->execute([$hash, auth()->id(), $account['clave'], $account['revision']]);
+                if ($query->rowCount() !== 1) {
+                    throw new DomainException('La cuenta cambió durante la edición. Vuelve a iniciar sesión.');
+                }
+                $newCredential = credential(['clave' => $hash, 'revision' => $account['revision'] + 1]);
             }
-            $newCredential = credential(['clave' => $hash, 'revision' => $account['revision'] + 1]);
-        }
-        $db->prepare('UPDATE accounts SET name=?, updated_at=NOW() WHERE id=?')->execute([$name, auth()->id()]);
-        if ($name !== $account['nombre']) {
-            $db->prepare('UPDATE accounts SET first_name=NULL, last_name=NULL WHERE id=?')->execute([auth()->id()]);
-        }
-        $province = auth()->user()->province ?? 'nacional';
-        $query = $db->prepare('INSERT INTO perfiles (provincia,usuario,nombre) VALUES (?,?,?)
-            ON DUPLICATE KEY UPDATE nombre=VALUES(nombre)');
-        $query->execute([$province, $account['usuario'], $name]);
-        if ($image !== null || ($input['quitar_imagen'] ?? '') === '1') {
-            $query = $db->prepare('UPDATE perfiles SET imagen=?, imagen_tipo=? WHERE provincia=? AND usuario=?');
-            $query->bindValue(1, $image, $image === null ? PDO::PARAM_NULL : PDO::PARAM_LOB);
-            $query->bindValue(2, $mime);
-            $query->bindValue(3, $province);
-            $query->bindValue(4, $account['usuario']);
-            $query->execute();
-        }
-        $db->commit();
+            $db->prepare('UPDATE accounts SET name=?, updated_at=NOW() WHERE id=?')->execute([$name, auth()->id()]);
+            if ($name !== $account['nombre']) {
+                $db->prepare('UPDATE accounts SET first_name=NULL, last_name=NULL WHERE id=?')->execute([auth()->id()]);
+                Security::event('profile_name_changed', null, 'account:'.auth()->id(), mb_substr($account['nombre'], 0, 145).' → '.mb_substr($name, 0, 145));
+            }
+            $province = auth()->user()->province ?? 'nacional';
+            $query = $db->prepare('INSERT INTO perfiles (provincia,usuario,nombre) VALUES (?,?,?)
+                ON DUPLICATE KEY UPDATE nombre=VALUES(nombre)');
+            $query->execute([$province, $account['usuario'], $name]);
+            if ($image !== null || ($input['quitar_imagen'] ?? '') === '1') {
+                $query = $db->prepare('UPDATE perfiles SET imagen=?, imagen_tipo=? WHERE provincia=? AND usuario=?');
+                $query->bindValue(1, $image, $image === null ? PDO::PARAM_NULL : PDO::PARAM_LOB);
+                $query->bindValue(2, $mime);
+                $query->bindValue(3, $province);
+                $query->bindValue(4, $account['usuario']);
+                $query->execute();
+            }
+            Security::event('application_write', null, 'perfil:'.auth()->id());
 
-        return [[], $newCredential];
-    } catch (Throwable $error) {
-        $db->rollBack();
-        throw $error;
+            return [[], $newCredential];
+        });
+    } catch (DomainException $error) {
+        return [[$error->getMessage()], null];
     }
 }

@@ -2,6 +2,19 @@
 
 Formato inspirado en Keep a Changelog. El proyecto aún no tiene versiones etiquetadas; se registran entregas por fecha.
 
+## [Sin publicar como versión] — 2026-11-25
+
+Requiere ejecutar `php artisan migrate` (columna `atenciones.solicitud`).
+
+### Corregido
+- Pérdida de fichas al vencer la sesión o fallar la red, y de direcciones al marcar el mapa.
+- Mensajes de error que no se mostraban, límite de intentos evadible y bloqueo del superadministrador.
+- Historial con motivos reales, conservación de datos adicionales y responsable con usuario.
+- Auditoría que distingue escrituras, rechazos y lecturas; fichas duplicadas por doble envío.
+- Pruebas que se detienen antes de usar una base distinta de `aph_test`.
+- Buscador CIE-10, creación y exportación para el superadministrador.
+- Migración de cuentas reintentable y reversiones que no borran datos.
+
 ## [Sin publicar como versión] — 2026-11-17
 
 ### Cambiado

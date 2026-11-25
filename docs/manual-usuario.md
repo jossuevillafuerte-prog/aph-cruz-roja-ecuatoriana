@@ -52,7 +52,7 @@ Los gráficos muestran fichas registradas y no eliminadas, incluidas pendientes.
 
 ## Exportar
 
-Desde Atenciones puede descargar cerradas a Excel y ubicaciones GeoJSON. Estas salidas excluyen pendientes y eliminadas. El dashboard incluye pendientes: por eso sus totales pueden diferir de la exportación. Guarde archivos solo en ubicaciones institucionales autorizadas; un archivo descargado ya no está protegido por la sesión del sistema.
+Desde Atenciones puede descargar cerradas a Excel y ubicaciones GeoJSON. El superadministrador filtra primero por provincia. Estas salidas excluyen pendientes y eliminadas. El dashboard incluye pendientes: por eso sus totales pueden diferir de la exportación. Guarde archivos solo en ubicaciones institucionales autorizadas; un archivo descargado ya no está protegido por la sesión del sistema.
 
 ## Usuarios Nacionales: solo superadministrador
 

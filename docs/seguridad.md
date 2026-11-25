@@ -19,7 +19,7 @@ Revisión técnica documental: 17 de noviembre de 2026. Sustituye las referencia
 | Cabeceras | no-store, nosniff, X-Frame-Options DENY, strict-origin, HSTS bajo HTTPS y Permissions-Policy. No CSP propia entregada. |
 | Entrada y salida | Validación de campos/catálogos, consultas parametrizadas y escape HTML en vistas. |
 | Edición de cuentas | Correo único, dominios exactos, hash solo si nueva clave, revocación de sesiones/invitaciones, no suspenderse a sí mismo ni dejar el sistema sin un superadministrador con acceso; un correo verificado no cambia con las invitaciones deshabilitadas. |
-| Auditoría | cambios para fichas; security_events para acceso, salidas y administración. No almacén inmutable independiente. |
+| Auditoría | cambios para fichas; security_events para acceso, salidas y administración. Las escrituras de fichas, recursos y perfil se registran en la misma transacción; los rechazos usan application_write_rejected o record_access_denied. No almacén inmutable independiente. |
 
 Email institucional valida pertenencia a una lista, no existencia del buzón ni concordancia obligatoria con la provincia asignada. Las invitaciones prueban control del correo al activarse; no constituyen un segundo factor en cada login. legacy_access permite acceso temporal sin verificación y no tiene interruptor abierto en la interfaz.
 

@@ -14,9 +14,9 @@ class Security
         return hash('sha256', $user->clave.':'.$user->revision);
     }
 
-    public static function event(string $event, ?string $identity = null, ?string $target = null): void
+    public static function event(string $event, ?string $identity = null, ?string $target = null, ?string $reference = null): void
     {
-        DB::table('security_events')->insert(['identity' => $identity ?? Auth::id(), 'event' => $event, 'ip' => request()->ip(), 'created_at' => now(), 'target' => $target]);
+        DB::table('security_events')->insert(['identity' => $identity ?? Auth::id(), 'event' => $event, 'ip' => request()->ip(), 'created_at' => now(), 'target' => $target, 'reference' => $reference]);
     }
 
     public static function logout($request, string $reason = 'logout')
