@@ -105,4 +105,32 @@ class FormFeedbackTest extends TestCase
         $this->assertStringContainsString('<dialog id="deactivate-confirmation"', $html);
         $this->assertStringContainsString('>Desactivar cuenta</button>', $html);
     }
+
+    public function test_empty_states_offer_the_next_action(): void
+    {
+        $this->signIn('azuay');
+        $this->get('/?vista=atenciones')->assertOk()->assertSee('Todavía no hay atenciones registradas en Azuay.')->assertSee('href="?vista=nueva"', false)->assertSee('Registrar la primera atención');
+        $this->get('/?vista=atenciones&estado=Pendiente')->assertOk()->assertSee('No hay atenciones pendientes.')->assertSee('Ver todas las atenciones');
+        $this->get('/?vista=recursos')->assertOk()->assertSee('href="#r-numero"', false)->assertSee('Agregar el primer recurso');
+        $this->signIn('admin');
+        $this->get('/users?q=nadie')->assertOk()->assertSee('No hay usuarios para estos filtros.')->assertSee('Quitar filtros');
+        $this->get('/national?view=atenciones')->assertOk()->assertSee('Ver todas las atenciones');
+    }
+
+    public function test_icon_buttons_verbs_and_self_activation(): void
+    {
+        $this->signIn('azuay');
+        $html = $this->get('/?vista=atenciones')->getContent();
+        $this->assertStringNotContainsString(' title="', $html);
+        $this->assertStringContainsString('aria-label="Cerrar sesión"', $html);
+        $new = $this->get('/?vista=nueva')->getContent();
+        $this->assertMatchesRegularExpression('/id="f-B"[^>]*value="'.date('Y-m-d').'"/', $new);
+
+        $this->signIn('admin');
+        $this->get('/?vista=nueva&select_province=1')->assertOk()->assertSee('Crear atención')->assertDontSee('Continuar');
+        $this->get('/?vista=recursos&select_province=1')->assertOk()->assertSee('Gestionar recursos');
+        $users = $this->get('/users')->getContent();
+        $this->assertStringNotContainsString('action="/users/'.DB::table('accounts')->where('username', 'admin')->value('id').'/invite"', $users);
+        $this->assertStringContainsString('Añade un correo para enviar la activación.', $users);
+    }
 }

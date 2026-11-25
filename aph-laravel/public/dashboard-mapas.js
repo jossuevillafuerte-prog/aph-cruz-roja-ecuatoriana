@@ -2,6 +2,8 @@
 'use strict';
 const source = document.getElementById('dashboard-data');
 if (!source) return;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mapMotion = {zoomAnimation: !reducedMotion, fadeAnimation: !reducedMotion, markerZoomAnimation: !reducedMotion};
 const records = JSON.parse(source.textContent);
 const filters = new Map();
 let selectedIds = null;
@@ -17,7 +19,8 @@ const el = (tag,text,cls) => { const n=document.createElement(tag); if(text!==un
 const fmt = n => n.toLocaleString('es-EC',{maximumFractionDigits:1});
 const svgEl = (tag,attrs={}) => {const n=document.createElementNS('http://www.w3.org/2000/svg',tag); for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v); return n;};
 function toggle(key,label) { filters.get(key)===label ? filters.delete(key) : filters.set(key,label); render(); }
-function interactive(node, description, callback) {
+function interactive(node, description, callback, focusKey) {
+ if (focusKey) node.dataset.focusKey = focusKey;
  node.setAttribute('tabindex','0'); node.setAttribute('role','button'); node.setAttribute('aria-label',description);
  node.addEventListener('click',callback); node.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();callback();}});
 }
@@ -27,7 +30,7 @@ function legend(c,entries,key) {
  const list=el('div',undefined,'chart-legend'); const total=entries.reduce((sum,e)=>sum+e[1],0);
  entries.forEach(([name,n],i)=>{const b=el('button',undefined,'chart-choice');b.type='button';b.setAttribute('aria-pressed',String(filters.get(key)===name));
  const sw=el('span',undefined,'chart-swatch');sw.style.background=colors[i%colors.length];
- b.append(sw,el('span',name),el('strong',`${n} · ${fmt(n/total*100)}%`)); b.onclick=()=>toggle(key,name);list.append(b);}); c.append(list);
+ b.dataset.focusKey=`legend|${key}|${name}`;b.append(sw,el('span',name),el('strong',`${n} · ${fmt(n/total*100)}%`)); b.onclick=()=>toggle(key,name);list.append(b);}); c.append(list);
 }
 function pie(rows,key,donut=false) {
  const c=card(labels[key]), entries=counts(rows,key), total=entries.reduce((s,e)=>s+e[1],0);
@@ -37,7 +40,7 @@ function pie(rows,key,donut=false) {
  const shape=n===total ? svgEl('circle',{cx:120,cy:120,r:100}) : svgEl('path',{d:`M120 120 L${120+100*Math.cos(angle)} ${120+100*Math.sin(angle)} A100 100 0 ${next-angle>Math.PI?1:0} 1 ${120+100*Math.cos(next)} ${120+100*Math.sin(next)} Z`});
  shape.setAttribute('fill',colors[i%colors.length]);shape.setAttribute('stroke','#fff');shape.setAttribute('stroke-width','2');
  shape.append(svgEl('title'));shape.firstChild.textContent=`${name}: ${n} (${fmt(n/total*100)}%)`;
- interactive(shape,`${name}: ${n}. Filtrar`,()=>toggle(key,name));svg.append(shape);angle=next;});
+ interactive(shape,`${name}: ${n}. Filtrar`,()=>toggle(key,name),`slice|${key}|${name}`);svg.append(shape);angle=next;});
  if(donut) {svg.append(svgEl('circle',{cx:120,cy:120,r:58,fill:'white','pointer-events':'none'}));const t=svgEl('text',{x:120,y:127,'text-anchor':'middle',fill:'#333'});t.textContent=total;svg.append(t);}
  c.append(svg);legend(c,entries,key);
 }
@@ -45,7 +48,7 @@ function bars(rows,key) {
  const c=card(labels[key]), entries=counts(rows,key), max=Math.max(1,...entries.map(e=>e[1]));
  if(!entries.length)c.append(el('p','Sin datos para estos filtros.'));
  const list=el('div',undefined,'interactive-bars');
- entries.forEach(([name,n])=>{const b=el('button',undefined,'chart-bar');b.type='button';b.setAttribute('aria-pressed',String(filters.get(key)===name));b.append(el('span',name),el('strong',n));const track=el('span',undefined,'stat-track'), fill=el('span');fill.style.width=`${100*n/max}%`;track.append(fill);b.append(track);b.onclick=()=>toggle(key,name);list.append(b);}); c.append(list);
+ entries.forEach(([name,n])=>{const b=el('button',undefined,'chart-bar');b.type='button';b.setAttribute('aria-pressed',String(filters.get(key)===name));b.dataset.focusKey=`bar|${key}|${name}`;b.append(el('span',name),el('strong',n));const track=el('span',undefined,'stat-track'), fill=el('span');fill.style.width=`${100*n/max}%`;track.append(fill);b.append(track);b.onclick=()=>toggle(key,name);list.append(b);}); c.append(list);
 }
 function line(entries,key,title,unit='') {
  const c=card(title);entries.sort((a,b)=>a[0].localeCompare(b[0]));
@@ -54,9 +57,9 @@ function line(entries,key,title,unit='') {
  const coords=entries.map((e,i)=>[40+(entries.length===1?250:i*520/(entries.length-1)),175-e[1]*140/max]);
  const axis=svgEl('path',{d:'M40 20 V175 H570',stroke:'#aaa',fill:'none'});svg.append(axis);
  svg.append(svgEl('polyline',{points:coords.map(p=>p.join(',')).join(' '),fill:'none',stroke:colors[0],'stroke-width':3}));
- entries.forEach(([date,n],i)=>{const [x,y]=coords[i];const p=svgEl('circle',{cx:x,cy:y,r:5,fill:colors[1]});const t=svgEl('title');t.textContent=`${date}: ${fmt(n)}${unit}`;p.append(t);interactive(p,t.textContent,()=>toggle(key,date));svg.append(p);});
+ entries.forEach(([date,n],i)=>{const [x,y]=coords[i];const p=svgEl('circle',{cx:x,cy:y,r:5,fill:colors[1]});const t=svgEl('title');t.textContent=`${date}: ${fmt(n)}${unit}`;p.append(t);interactive(p,t.textContent,()=>toggle(key,date),`point|${key}|${date}`);svg.append(p);});
  for(const [x,y,text] of [[4,25,fmt(max)],[12,178,'0'],[40,205,entries[0][0]],[470,205,entries.at(-1)[0]]]){const t=svgEl('text',{x,y,'font-size':13});t.textContent=text;svg.append(t);}c.append(svg);
- const details=el('details');details.append(el('summary','Ver fechas y valores'));entries.forEach(([date,n])=>{const b=el('button',`${date}: ${fmt(n)}${unit}`,'button');b.type='button';b.onclick=()=>toggle(key,date);details.append(b);});c.append(details);
+ const details=el('details');details.append(el('summary','Ver fechas y valores'));entries.forEach(([date,n])=>{const b=el('button',`${date}: ${fmt(n)}${unit}`,'button');b.type='button';b.dataset.focusKey=`date|${key}|${date}`;b.onclick=()=>toggle(key,date);details.append(b);});c.append(details);
 }
 function pyramid(rows) {
  const c=card('Pirámide por rangos etarios'); c.classList.add('full-chart');
@@ -64,12 +67,12 @@ function pyramid(rows) {
  const groups=[...bands.map(b=>b[1]),'Sin registrar'].reverse(); const sexes=['Hombre','Mujer','Sin especificar'];
  const entries=groups.map(age=>sexes.map(sex=>rows.filter(r=>value(r,'edad')===age&&value(r,'O')===sex).length));
  const peak=Math.max(1,...entries.flat());const table=el('table',undefined,'age-pyramid');const head=el('tr');['Hombre','Edad','Mujer','Sin especificar'].forEach(t=>head.append(el('th',t)));table.append(head);
- groups.forEach((age,i)=>{const tr=el('tr');const make=(sex,j)=>{const td=el('td');const b=el('button',String(entries[i][j]),'pyramid-choice'); b.type='button';b.style.setProperty('--bar',`${entries[i][j]/peak*100}%`);b.setAttribute('aria-label',`${age}, ${sex}: ${entries[i][j]}`);b.onclick=()=>{filters.set('edad',age);filters.set('O',sex);render();};td.append(b);return td;};tr.append(make('Hombre',0),el('th',age),make('Mujer',1),make('Sin especificar',2));table.append(tr);});c.append(table);
+ groups.forEach((age,i)=>{const tr=el('tr');const make=(sex,j)=>{const td=el('td');const b=el('button',String(entries[i][j]),'pyramid-choice'); b.type='button';b.style.setProperty('--bar',`${entries[i][j]/peak*100}%`);b.setAttribute('aria-label',`${age}, ${sex}: ${entries[i][j]}`);b.dataset.focusKey=`pyramid|${age}|${sex}`;b.onclick=()=>{filters.set('edad',age);filters.set('O',sex);render();};td.append(b);return td;};tr.append(make('Hombre',0),el('th',age),make('Mujer',1),make('Sin especificar',2));table.append(tr);});c.append(table);
 }
 const maps=[];
 document.querySelectorAll('.dashboard-map').forEach(node=>{
  if(!window.L){node.textContent='Mapa no disponible.';return;}
- const map=L.map(node,{scrollWheelZoom:false}).setView([-2.9,-79],9);
+ const map=L.map(node,{scrollWheelZoom:false,...mapMotion}).setView([-2.9,-79],9);
  L.tileLayer(node.dataset.tiles,{attribution:node.dataset.attribution,maxZoom:19}).on('tileerror',()=>{document.getElementById('map-count-'+node.dataset.location).textContent='No se pudo cargar parte del mapa base. Los puntos registrados se conservan. Verifica la conexión o el proveedor cartográfico.';}).addTo(map);
  maps.push({map,layer:L.layerGroup().addTo(map),key:node.dataset.location,fitted:false});
 });
@@ -81,7 +84,7 @@ function updateMaps(rows) {
  const marker=L.circleMarker(group.coords,{radius:group.rows.length>1?10:7,color:'#fff',weight:2,fillColor:colors[0],fillOpacity:1}).bindTooltip(tooltip).addTo(m.layer);
  marker.on('click',()=>{selectedIds=new Set(group.rows.map(r=>r.id));render();});}
  document.getElementById('map-count-'+m.key).textContent=`${count} fichas en ${grouped.size} ubicaciones. Pulsa un punto para filtrar.`;
- if(!m.fitted&&grouped.size){m.map.fitBounds([...grouped.values()].map(g=>g.coords),{padding:[25,25],maxZoom:13});m.fitted=true;}
+ if(!m.fitted&&grouped.size){m.map.fitBounds([...grouped.values()].map(g=>g.coords),{padding:[25,25],maxZoom:13,animate:!reducedMotion});m.fitted=true;}
  });
 }
 const provinceMaps=[];
@@ -114,9 +117,9 @@ if(document.getElementById('ecuador-map')){
  fetch('/ecuador-provincias.geojson').then(r=>{if(!r.ok)throw Error('Cartografía no disponible');return r.json();}).then(data=>{
   provinceFeatures=data;
   if(window.L){for(const [id,islands] of [['ecuador-map',false],['galapagos-map',true]]){
-   const map=L.map(id,{scrollWheelZoom:false,attributionControl:false,zoomSnap:.25});
+   const map=L.map(id,{scrollWheelZoom:false,attributionControl:false,zoomSnap:.25,...mapMotion});
    const layer=L.geoJSON(data,{filter:f=>(f.properties.key==='galapagos')===islands,onEachFeature:(f,region)=>region.on('click',()=>toggle('provincia',f.properties.name))}).addTo(map);
-   map.fitBounds(layer.getBounds(),{padding:[15,15]});
+   map.fitBounds(layer.getBounds(),{padding:[15,15],animate:!reducedMotion});
    layer.eachLayer(region=>{const path=region.getElement();if(path){path.setAttribute('tabindex','0');path.setAttribute('role','button');path.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle('provincia',region.feature.properties.name);}});}});
    provinceMaps.push({map,layer});
   }}
@@ -124,11 +127,20 @@ if(document.getElementById('ecuador-map')){
  }).catch(()=>{document.getElementById('province-map-status').textContent='No se pudo cargar la cartografía. Recarga la página para volver a intentarlo.';});
 }
 
+// Redibujar no debe dejar el foco perdido: se devuelve al mismo control o, si ya no existe, a los filtros.
 function render() {
+ const focusKey = document.activeElement?.dataset?.focusKey;
+ draw();
+ if (!focusKey) return;
+ const target = [...document.querySelectorAll('[data-focus-key]')].find(node => node.dataset.focusKey === focusKey)
+  ?? document.querySelector('#dashboard-filters button') ?? document.getElementById('dashboard-charts');
+ target?.focus({preventScroll: true});
+}
+function draw() {
  const rows=records.filter(r=>(!selectedIds||selectedIds.has(r.id))&&[...filters].every(([key,v])=>value(r,key)===v));
  const chips=document.getElementById('dashboard-filters');chips.replaceChildren();chips.hidden=!filters.size&&!selectedIds;
- filters.forEach((v,key)=>{const b=el('button',`${labels[key]}: ${v} ×`,'button');b.onclick=()=>{filters.delete(key);render();};chips.append(b);});
- if(selectedIds){const b=el('button','Ubicación seleccionada ×','button');b.onclick=()=>{selectedIds=null;render();};chips.append(b);}
+ filters.forEach((v,key)=>{const b=el('button',`${labels[key]}: ${v} ×`,'button');b.dataset.focusKey=`chip|${key}`;b.setAttribute('aria-label',`Quitar filtro ${labels[key]}: ${v}`);b.onclick=()=>{filters.delete(key);render();};chips.append(b);});
+ if(selectedIds){const b=el('button','Ubicación seleccionada ×','button');b.dataset.focusKey='chip|ubicacion';b.setAttribute('aria-label','Quitar filtro de ubicación');b.onclick=()=>{selectedIds=null;render();};chips.append(b);}
  const km=new Map();rows.forEach(r=>{if(r.Z!==''&&r.AA!==''&&r.Z!=null&&r.AA!=null&&Number.isFinite(Number(r.Z))&&Number.isFinite(Number(r.AA))&&Number(r.Z)>=0&&Number(r.AA)>=Number(r.Z)&&r.B)km.set(r.B,(km.get(r.B)||0)+Number(r.AA)-Number(r.Z));});
  const metrics=document.getElementById('dashboard-metrics');metrics.replaceChildren();
  for(const [title,n] of [['Atenciones',rows.length],['Pendientes',rows.filter(r=>r.estado==='Pendiente').length],['Cerradas',rows.filter(r=>r.estado==='Cerrada').length],['Despachos',rows.filter(r=>r.J).length],['Kilómetros',fmt([...km.values()].reduce((a,b)=>a+b,0))]]){const c=el('section',undefined,'card');c.append(el('h2',title),el('p',n,'metric-value'));metrics.append(c);}

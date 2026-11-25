@@ -71,6 +71,6 @@ El código de activación valida el primer acceso/correo, no se pide en cada ses
 
 A los ocho minutos de inactividad aparece aviso; a los diez vence la sesión. A las ocho horas se requiere nuevo ingreso. Si la sesión vence con cambios sin guardar, aparece «Trabajo en pausa»: inicie sesión con el mismo usuario en otra pestaña y pulse Reanudar antes de 30 minutos. Si no hay conexión al guardar, el formulario lo indica y conserva los datos. Guarde avances oportunamente.
 
-Si faltan datos o alguno no es válido, un resumen arriba enlaza a cada campo y el mensaje aparece también junto a él; al corregirlo, el aviso desaparece. Si un mapa falla, revise conexión y comunique el mensaje; no cargue capturas con pacientes en canales públicos.
+Si intenta salir de una ficha con cambios sin guardar, el navegador pide confirmación. Si faltan datos o alguno no es válido, un resumen arriba enlaza a cada campo y el mensaje aparece también junto a él; al corregirlo, el aviso desaparece. Si un mapa falla, revise conexión y comunique el mensaje; no cargue capturas con pacientes en canales públicos.
 
 Al reportar, indique módulo, hora, acción y mensaje, junto con una referencia mínima autorizada. Nunca incluya contraseña, cookies, código de activación ni una ficha clínica completa en GitHub. Canal y responsable de soporte: pendientes de designación institucional; durante el piloto coordinar con el responsable del proyecto.

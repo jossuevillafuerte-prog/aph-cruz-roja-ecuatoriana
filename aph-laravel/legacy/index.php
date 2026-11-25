@@ -118,6 +118,9 @@ if (($deleteView || $printView) && ! $record) {
 $editing = $view === 'nueva' || $record;
 $data = $record ? json_decode($record['datos'], true, 512, JSON_THROW_ON_ERROR) : [];
 $savedData = $data;
+if (! $record && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $data['B'] = date('Y-m-d');
+}
 $previousResponsible = $savedData['Y'] ?? '';
 $responsible = $previousResponsible !== '' ? $previousResponsible : accountLabel($account);
 $responsibleId = $record['responsable_id'] ?? ($previousResponsible === '' ? $account['id'] : null);
@@ -302,7 +305,7 @@ if ($isAdmin) {
             <span><strong><?= h($account['nombre']) ?></strong><small>Mi perfil</small></span>
         </a>
         <form method="post" action="/logout"><input type="hidden" name="_token" value="<?= h($_SESSION['token']) ?>">
-            <button class="icon-button logout" aria-label="Cerrar sesión" title="Cerrar sesión"><?= icon('exit') ?></button></form>
+            <button class="icon-button logout" aria-label="Cerrar sesión"><?= icon('exit') ?></button></form>
     </div>
 </div></header>
 <dialog id="app-menu" class="app-menu" aria-labelledby="menu-title">
@@ -358,7 +361,7 @@ if ($isAdmin) {
             <?php foreach ($resourceFields as $key => $label) { ?><td><?= h($item[$key]) ?></td><?php } ?>
             <td><a class="button" href="?vista=recursos&amp;id=<?= h($item['id']) ?>"><?= icon('edit') ?> Editar</a></td>
         </tr><?php } ?>
-        <?php if (! $resources) { ?><tr><td colspan="6">Todavía no hay recursos registrados.</td></tr><?php } ?>
+        <?php if (! $resources) { ?><tr><td colspan="6" class="empty-state">Todavía no hay recursos registrados. <a class="button" href="#r-numero">Agregar el primer recurso</a></td></tr><?php } ?>
         </tbody>
     </table></div>
 <?php } elseif ($deleteView) { ?>
@@ -416,13 +419,13 @@ if ($isAdmin) {
             <td><?= h($values['C'] ?: '—') ?></td><td><span class="badge status <?= $statusClasses[$item['estado']] ?>"><?= icon($item['estado'] === 'Cerrada' ? 'check' : 'clock') ?> <?= h($item['estado']) ?></span></td>
             <td><div class="row-actions">
                 <?php if (true) { ?>
-                    <a class="button icon-button" href="?id=<?= h($item['id']) ?>&amp;return_estado=<?= h($filter) ?>&amp;return_page=<?= h($page) ?>" aria-label="Editar hoja <?= h($values['K'] ?: 'sin número') ?>" title="Editar"><?= icon('edit') ?></a>
+                    <a class="button icon-button" href="?id=<?= h($item['id']) ?>&amp;return_estado=<?= h($filter) ?>&amp;return_page=<?= h($page) ?>" aria-label="Editar hoja <?= h($values['K'] ?: 'sin número') ?>"><?= icon('edit') ?></a>
                 <?php } ?>
-                <button type="button" class="button icon-button danger emphasis" data-delete-action="/?vista=eliminar&amp;id=<?= h($item['id']) ?>" data-version="<?= h($item['version']) ?>" data-province="<?= h($province) ?>" data-sheet="<?= h($values['K']) ?>" aria-label="Eliminar hoja <?= h($values['K'] ?: 'sin número') ?>" title="Eliminar"><?= icon('delete') ?></button>
-                <a class="button icon-button" href="?vista=imprimir&amp;id=<?= h($item['id']) ?>" aria-label="Imprimir hoja <?= h($values['K'] ?: 'sin número') ?> o guardar como PDF" title="Imprimir / PDF"><?= icon('print') ?></a>
+                <button type="button" class="button icon-button danger emphasis" data-delete-action="/?vista=eliminar&amp;id=<?= h($item['id']) ?>" data-version="<?= h($item['version']) ?>" data-province="<?= h($province) ?>" data-sheet="<?= h($values['K']) ?>" aria-label="Eliminar hoja <?= h($values['K'] ?: 'sin número') ?>"><?= icon('delete') ?></button>
+                <a class="button icon-button" href="?vista=imprimir&amp;id=<?= h($item['id']) ?>" aria-label="Imprimir hoja <?= h($values['K'] ?: 'sin número') ?> o guardar como PDF"><?= icon('print') ?></a>
             </div></td></tr>
         <?php } if (! $records) { ?>
-            <tr><td colspan="6">No hay atenciones para mostrar.</td></tr>
+            <tr><td colspan="6" class="empty-state"><?php if ($filter !== '') { ?>No hay atenciones <?= $filter === 'Pendiente' ? 'pendientes' : 'cerradas' ?>. <a class="button" href="?vista=atenciones">Ver todas las atenciones</a><?php } else { ?>Todavía no hay atenciones registradas en <?= h($territory['nombre']) ?>. <a class="button primary" href="?vista=nueva"><?= icon('add') ?> Registrar la primera atención</a><?php } ?></td></tr>
         <?php } ?>
         </tbody>
     </table></div>

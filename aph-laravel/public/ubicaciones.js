@@ -70,7 +70,8 @@ for (const picker of document.querySelectorAll('.location-picker')) {
         const point = savedPoint();
         if (!map) {
             const center = picker.dataset.islands === '1' ? [-0.62, -90.55] : [-1.6, -78.4];
-            map = L.map(picker.querySelector('.location-map')).setView(point ?? center, point ? 15 : 7);
+            const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+            map = L.map(picker.querySelector('.location-map'), {zoomAnimation: !still, fadeAnimation: !still, markerZoomAnimation: !still}).setView(point ?? center, point ? 15 : 7);
             L.tileLayer(picker.dataset.tiles, {attribution: picker.dataset.attribution, maxZoom: 19})
                 .on('tileerror', () => { mapStatus.textContent = 'Parte del mapa no cargó. También puedes usar la dirección escrita.'; })
                 .addTo(map);

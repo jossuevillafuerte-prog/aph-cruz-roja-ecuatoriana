@@ -42,7 +42,7 @@ $dashboardRecord = static function (array $row) use ($provinces): string {
 <div id="province-legend" class="actions" aria-label="Escala de atenciones"></div><p id="province-map-status" role="status">Cargando límites provinciales…</p><div id="province-counts" class="province-counts"></div>
 <small>Cartografía de referencia: <a href="https://www.geoboundaries.org/api.html" target="_blank" rel="noopener">geoBoundaries</a>, Ecuador ADM1, límites representados en 2011, CC0. Conteos actualizados a partir de las fichas del sistema.</small></section>
 <?php } ?>
-<div id="dashboard-charts" class="dashboard-breakdowns"></div>
+<div id="dashboard-charts" class="dashboard-breakdowns" tabindex="-1" aria-label="Gráficos"></div>
 <noscript><p class="errors">Activa JavaScript para consultar los gráficos y filtros interactivos.</p></noscript>
 <script id="dashboard-data" type="application/json">[<?php $separator = '';
 foreach ($dashboardRows as $row) {

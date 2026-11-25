@@ -41,6 +41,7 @@
 
     function hardLock() {
         vault = null;
+        window.aphSessionLeaving = true;
         document.body.replaceChildren();
         location.replace('/login');
     }

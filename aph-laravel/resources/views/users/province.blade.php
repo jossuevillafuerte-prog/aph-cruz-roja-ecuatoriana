@@ -10,5 +10,5 @@ require_once base_path('legacy/ui.php');
 <label for="province-choice">Provincia</label><select name="province" id="province-choice" required>
 <option value="">Selecciona una provincia</option>
 @foreach($provinces as $key=>$p)<option value="{{ $key }}" @selected(session('scope_province')===$key)>{{ $p['nombre'] }}</option>@endforeach
-</select><div class="actions"><button class="primary emphasis">{!! icon($next==='nueva' ? 'add' : 'ambulance') !!} Continuar</button></div></form>
+</select><div class="actions"><button class="primary emphasis">{!! icon($next==='nueva' ? 'add' : 'ambulance') !!} {{ $next==='nueva' ? 'Crear atención' : 'Gestionar recursos' }}</button></div></form>
 @endsection

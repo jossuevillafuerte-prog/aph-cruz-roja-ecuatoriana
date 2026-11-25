@@ -58,6 +58,18 @@
         }
     }
 
+    // Avisar antes de abandonar una ficha con cambios sin enviar.
+    const record = document.querySelector('main form[method="post"] [name="version"]')?.form;
+    let unsaved = Boolean(record && document.getElementById('form-errors'));
+    record?.addEventListener('input', () => { unsaved = true; });
+    record?.addEventListener('change', () => { unsaved = true; });
+    record?.addEventListener('submit', () => { unsaved = false; });
+    window.addEventListener('beforeunload', event => {
+        if (!unsaved || window.aphSessionLeaving) return;
+        event.preventDefault();
+        event.returnValue = '';
+    });
+
     document.addEventListener('input', onEdit);
     document.addEventListener('change', onEdit);
     document.addEventListener('focusout', event => {
