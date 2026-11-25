@@ -25,13 +25,15 @@ Avatar: JPG, PNG o WebP de hasta 1 MB y 2048 píxeles por lado. El acceso Seguri
 4. Seleccione el recurso despachado. Si falta, agréguelo primero en Recursos de la misma provincia. El responsable se registra automáticamente desde la cuenta.
 5. Para dirección del evento y localidad de destino, abra el botón de mapa, coloque el pin y confirme. Si ya escribió una dirección, el sistema la conserva y ofrece «Usar dirección sugerida». Se toma una dirección de referencia. Verifique que corresponda al lugar; los mapas no son evidencia de precisión ni reemplazan referencias operativas.
 6. Registre kilometrajes de salida y llegada; la distancia es llegada menos salida. No confundir kilometraje del odómetro con distancia estimada del mapa. Combustibles se seleccionan en desplegables.
-7. Use Guardar para dejar Pendiente, o Cerrar cuando se cumplan los requisitos mostrados. Corregir un campo inválido no sustituye la revisión clínica/operativa del registro.
+7. Use Guardar para dejar Pendiente (atajo Ctrl+S, o Cmd+S en Mac), o Cerrar cuando se cumplan los requisitos mostrados. Corregir un campo inválido no sustituye la revisión clínica/operativa del registro.
+
+Mientras escribe, el sistema guarda un borrador a los pocos segundos y lo indica bajo el formulario. Si cierra la pestaña o se corta la conexión, al volver a la misma ficha verá «Restaurar borrador» o «Descartar borrador»; el borrador nunca se aplica solo. Es personal, se borra al guardar la ficha y caduca a los 7 días. No reemplaza guardar: un borrador no es una atención registrada.
 
 La fecha es obligatoria al guardar. Al cerrar se requieren fecha, código APH, cantón y responsable, además de coherencia de datos suministrados y número de documento cuando corresponda. No todos los campos son obligatorios. La cédula requiere diez dígitos; esto verifica formato, no identidad ni dígito verificador.
 
 ## Revisar, corregir y eliminar
 
-En Atenciones verá total, cerradas y pendientes. El listado muestra 30 fichas por página. Las tarjetas permiten filtrar; las filas pendientes se resaltan en amarillo suave. El superadministrador dispone de filtro provincial. El técnico solo ve su provincia, aunque conozca el ID de otra ficha.
+En Atenciones verá las pestañas Todas, Cerradas y Pendientes con su cantidad. El listado muestra 30 fichas por página. La pestaña marcada indica el filtro activo; use Todas para quitarlo; las filas pendientes se resaltan en amarillo suave. El superadministrador dispone de filtro provincial. El técnico solo ve su provincia, aunque conozca el ID de otra ficha.
 
 - **Editar:** abre la hoja. Volver a atenciones regresa al listado conservando el contexto disponible. Una ficha cerrada requiere motivo de corrección; los cambios quedan en historial.
 - **Conflicto de edición:** si otra persona guardó primero, recargue, revise y concilie. No repita el envío esperando sobrescribir.
@@ -58,7 +60,7 @@ Desde Atenciones puede descargar cerradas a Excel y ubicaciones GeoJSON. El supe
 
 ## Usuarios Nacionales: solo superadministrador
 
-1. Filtre por usuario/nombre/correo, provincia o estado. Activo indica habilitación; revise también si el correo está pendiente de activación.
+1. Filtre por usuario/nombre/correo, provincia o estado. La tecla «/» lleva a la búsqueda. Activo indica habilitación; revise también si el correo está pendiente de activación.
 2. Crear técnico solicita nombre, usuario único, correo institucional y provincia. La cuenta nueva queda pendiente; no es accesible hasta completar activación.
 3. Editar datos abre un panel lateral con nombre, apellido, correo, contraseña, rol y provincia. Deje contraseña vacía para conservarla. Guardar vuelve al mismo módulo y muestra confirmación; los errores corresponden solo a ese usuario.
 4. Cambiar provincia/rol no mueve fichas históricas. Verifique que la asignación sea autorizada. Se revocan otras sesiones de la cuenta.

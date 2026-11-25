@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivationController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DraftController;
 use App\Http\Controllers\LegacyController;
 use App\Http\Controllers\NationalController;
 use App\Http\Controllers\UsersController;
@@ -18,6 +19,8 @@ Route::middleware('limits')->group(function () {
     Route::get('/security', fn () => view('security.sessions'));
     Route::post('/security/revoke', [AuthController::class, 'revoke'])->middleware('throttle:5,5');
     Route::match(['get', 'post'], '/', LegacyController::class);
+    Route::post('/drafts', [DraftController::class, 'store'])->middleware('throttle:60,1');
+    Route::post('/drafts/discard', [DraftController::class, 'destroy'])->middleware('throttle:30,1');
     Route::middleware('superadmin')->group(function () {
         Route::get('/national', [NationalController::class, 'index']);
         Route::post('/scope', [NationalController::class, 'scope']);

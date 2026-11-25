@@ -4,9 +4,14 @@ Formato inspirado en Keep a Changelog. El proyecto aún no tiene versiones etiqu
 
 ## [Sin publicar como versión] — 2026-11-25
 
-Requiere ejecutar `php artisan migrate` (columnas `atenciones.solicitud` y `atenciones.fecha`, e índices).
+Requiere ejecutar `php artisan migrate` (columnas `atenciones.solicitud` y `atenciones.fecha`, índices y tabla `drafts`).
+
+### Añadido
+- Borrador de ficha en el servidor: se guarda cifrado a los 3 segundos de dejar de escribir, se ofrece restaurar o descartar al volver y se borra al guardar la ficha o a los 7 días. No prolonga una sesión inactiva.
+- Atajos de teclado: Ctrl+S (Cmd+S) guarda la ficha y «/» enfoca la búsqueda de Usuarios Nacionales.
 
 ### Cambiado
+- Los filtros Todas, Cerradas y Pendientes del listado son pestañas con `aria-current`; ya no se desactivan al pulsarlos de nuevo.
 - El panel muestra los últimos 12 meses por defecto, con periodo configurable y un máximo de 10.000 atenciones. El listado provincial se pagina.
 
 ### Corregido
@@ -21,6 +26,7 @@ Requiere ejecutar `php artisan migrate` (columnas `atenciones.solicitud` y `aten
 - Formularios: errores junto a cada campo, resumen enlazado y enfocable, validación al salir del campo, usuario conservado en el login y mensajes de validación en español.
 - Plantilla `.env.example`: `APP_LOCALE=es`, `LOG_STACK=daily` y `LOG_LEVEL=warning`.
 - Migración de cuentas reintentable y reversiones que no borran datos.
+- Abrir una ficha con datos incompletos ya no produce un error 500.
 
 ## [Sin publicar como versión] — 2026-11-17
 

@@ -329,3 +329,18 @@ h1, h2, h3, h4, h5, h6, strong, b, th, dt { font-weight: 600; }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Filtros de estado como pestañas del listado, no como tarjetas de indicadores. */
+.attention-kpis { display: flex; flex-wrap: nowrap; gap: 0; margin: 1rem 0 0; border-bottom: 1px solid var(--cre-platinum); }
+.attention-kpis .button { flex: 1 1 0; min-height: 44px; padding: .5rem; justify-content: center; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: transparent; color: var(--text); box-shadow: none; outline: 0; }
+.attention-kpis .button::after { display: none; }
+.attention-kpis .button > span { flex-wrap: nowrap; gap: .4rem; font-size: .875rem; }
+.attention-kpis strong { font-size: 1rem; }
+.attention-kpis [aria-current="page"] { border-bottom-color: var(--cre-blue); background: #eaf4fb; color: var(--cre-blue); }
+.attention-kpis .button:hover { background: #f3f4f5; }
+.attention-kpis .button:focus-visible { outline: 3px solid var(--cre-blue); outline-offset: -3px; }
+
+/* Atajos y borradores. */
+kbd { display: inline-block; padding: 0 .3rem; border: 1px solid currentColor; border-radius: .25rem; font: 600 .75rem/1.4 system-ui, sans-serif; opacity: .8; }
+.draft-status { margin: .5rem 0; color: var(--muted); font-size: .875rem; }
+.draft-offer p { margin: 0 0 .5rem; color: var(--text); }

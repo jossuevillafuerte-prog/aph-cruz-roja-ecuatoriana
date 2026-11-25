@@ -12,7 +12,8 @@ Revisión técnica documental: 25 de noviembre de 2026. Sustituye las referencia
 | Contraseñas filtradas | Prefijo SHA-1 de cinco caracteres a Pwned Passwords; cotejo local de sufijo. Rechazo ante filtración o indisponibilidad; no se envía contraseña completa. |
 | Intentos | Cinco fallos por usuario y 50 por IP en cinco minutos. El usuario debe coincidir exactamente, también en tildes. Mensaje de login genérico. |
 | Sesión | MySQL, payload cifrado, ID rotado al autenticar; credencial derivada de hash/revisión. |
-| Tiempo | Aviso a ocho minutos, expiración a diez de inactividad y ocho horas absolutas. Con cambios sin guardar, la pantalla se pausa y la ficha se recupera al reingresar con el mismo usuario; los datos quedan solo en la memoria de esa pestaña durante 30 minutos. No hay autoguardado en servidor. |
+| Tiempo | Aviso a ocho minutos, expiración a diez de inactividad y ocho horas absolutas. Con cambios sin guardar, la pantalla se pausa y la ficha se recupera al reingresar con el mismo usuario; los datos quedan solo en la memoria de esa pestaña durante 30 minutos. |
+| Borradores | Tabla `drafts`, cifrados con APP_KEY, por cuenta y ficha dentro de su provincia. Máximo 64 KB, borrados al guardar la ficha y purgados a los 7 días. El autoguardado no renueva la inactividad de la sesión. |
 | Cookies | HttpOnly, SameSite Strict, Secure en producción, sin contraseña almacenada. HTTP local tiene excepción explícita. |
 | Logout | POST+CSRF, invalidación de sesión y renovación de token; comunicación entre pestañas. |
 | Autorización | Middleware nacional y consultas limitadas por provincia; edición/eliminación de cualquier ficha del ámbito, con auditoría. |
@@ -27,13 +28,13 @@ Email institucional valida pertenencia a una lista, no existencia del buzón ni 
 
 | Datos | Ubicación | Tratamiento requerido |
 | --- | --- | --- |
-| Identificación y salud | atenciones.datos, cambios.detalle | Acceso por necesidad funcional, cifrado de almacenamiento/respaldos y retención aprobada. |
+| Identificación y salud | atenciones.datos, cambios.detalle, drafts.payload (cifrado) | Acceso por necesidad funcional, cifrado de almacenamiento/respaldos y retención aprobada. |
 | Coordenadas | JSON de ficha, geocodificación y salidas | Referencia aproximada; evitar difusión no autorizada. |
 | Identidades de personal | accounts, operadores, perfiles | Gestión de altas/bajas y exactitud de roles. |
 | Credenciales | Hashes de accounts/operadores/usuarios | No exportar ni exponer; APP_KEY fuera de repositorio. |
 | Sesiones y eventos | sessions, security_events, logs | Acceso de soporte restringido y retención definida. |
 
-El cifrado de sesiones no cifra las fichas MySQL. No existe cifrado de columna clínica implementado. El volumen y las copias externas cifradas dependen de infraestructura pendiente. PDF/XLSX/GeoJSON dejan el control de acceso de la aplicación al descargarse: custodiar destino, impresión y compartición.
+El cifrado de sesiones no cifra las fichas MySQL. No existe cifrado de columna clínica implementado, salvo los borradores temporales de `drafts`. El volumen y las copias externas cifradas dependen de infraestructura pendiente. PDF/XLSX/GeoJSON dejan el control de acceso de la aplicación al descargarse: custodiar destino, impresión y compartición.
 
 ## Límites y decisiones pendientes
 

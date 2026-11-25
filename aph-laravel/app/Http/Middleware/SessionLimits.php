@@ -29,7 +29,7 @@ class SessionLimits
             return Security::logout($request, 'idle_timeout');
         }
         // Only explicit foreground interaction or state-changing requests renew activity.
-        if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'], true) && ! $request->is('session/status')) {
+        if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'], true) && ! $request->is('session/status', 'drafts', 'drafts/*')) {
             $s->put('last_activity', $now);
         }
 

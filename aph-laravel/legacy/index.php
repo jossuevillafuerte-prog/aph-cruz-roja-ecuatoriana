@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 use App\Security\Security;
+use App\Services\AttentionDrafts;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -116,7 +117,7 @@ if (($deleteView || $printView) && ! $record) {
     aphExit('Atención no encontrada.');
 }
 $editing = $view === 'nueva' || $record;
-$data = $record ? json_decode($record['datos'], true, 512, JSON_THROW_ON_ERROR) : [];
+$data = $record ? json_decode($record['datos'], true, 512, JSON_THROW_ON_ERROR) + array_fill_keys(array_keys(FIELDS), '') : [];
 $savedData = $data;
 if (! $record && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     $data['B'] = date('Y-m-d');
@@ -241,6 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     default => 'Actualización de atención pendiente',
                 };
                 $id = save($db, $province, $record ?: null, $data, $nextState, $reason !== '' ? $reason : $defaultReason, $resourceId, $account, $responsibleId, $requestId);
+                AttentionDrafts::forget((int) $user->id, $record ? AttentionDrafts::recordKey((int) $record['id']) : AttentionDrafts::newKey($province));
                 aphHeader('Location: ?id='.$id.'&guardado=1&'.$request->attributes->get('attention_return_context'), true, 303);
                 aphExit();
             } catch (DomainException $error) {
@@ -279,7 +281,7 @@ if ($isAdmin) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Registro APH · <?= h($territory['nombre']) ?></title>
     <link rel="stylesheet" href="estilos.css">
-    <script src="catalogo.js" defer></script><script src="/form-feedback.js" defer></script>
+    <script src="catalogo.js" defer></script><script src="/form-feedback.js" defer></script><script src="/attention-draft.js" defer></script>
     <meta name="csrf-token" content="<?= h(csrf_token()) ?>"><meta name="session-user" content="<?= h((string) $user->id) ?>"><script src="/session-security.js" defer></script>
     <?php if ($printView) { ?><link rel="stylesheet" href="impresion.css"><script src="impresion.js" defer></script><?php } ?>
     <?php if ($dashboardView || ($editing && ! $deleteView && ! $printView)) { ?>
@@ -398,9 +400,9 @@ if ($isAdmin) {
         <a class="button emphasis" href="/users"><?= icon('team') ?> Responsables APH</a>
     <?php } ?>
     <a class="button primary emphasis" href="?vista=nueva"><?= icon('add') ?> Nueva atención</a></div></div>
-    <nav class="filter-bar attention-kpis" aria-label="Resumen de atenciones">
-    <?php foreach ([['', 'all', 'list', 'Total de atenciones registradas', array_sum($counts)], ['Cerrada', 'closed', 'check', 'Atenciones cerradas', $counts['Cerrada'] ?? 0], ['Pendiente', 'pending', 'clock', 'Atenciones pendientes', $counts['Pendiente'] ?? 0]] as [$key,$style,$symbol,$label,$count]) { ?>
-        <a class="button status emphasis <?= h($style) ?>" data-state="<?= h($key) ?>" data-count="<?= h($count) ?>" href="<?= h('/?'.http_build_query(['vista' => 'atenciones', 'estado' => $filter === $key ? '' : $key])) ?>" aria-pressed="<?= $filter === $key ? 'true' : 'false' ?>"><?= icon($symbol) ?><span><?= h($label) ?><strong><?= h($count) ?></strong></span></a>
+    <nav class="filter-bar attention-kpis" aria-label="Filtrar atenciones por estado">
+    <?php foreach ([['', 'all', 'list', 'Todas', array_sum($counts)], ['Cerrada', 'closed', 'check', 'Cerradas', $counts['Cerrada'] ?? 0], ['Pendiente', 'pending', 'clock', 'Pendientes', $counts['Pendiente'] ?? 0]] as [$key,$style,$symbol,$label,$count]) { ?>
+        <a class="button status emphasis <?= h($style) ?>" data-state="<?= h($key) ?>" data-count="<?= h($count) ?>" href="<?= h('/?'.http_build_query(['vista' => 'atenciones', 'estado' => $key])) ?>"<?= $filter === $key ? ' aria-current="page"' : '' ?>><?= icon($symbol) ?><span><?= h($label) ?><strong><?= h($count) ?></strong></span></a>
     <?php } ?>
     </nav>
     <div class="card module-controls"><label for="attention-province">Provincia</label><select id="attention-province" disabled><option><?= h($territory['nombre']) ?></option></select>
@@ -437,7 +439,11 @@ if ($isAdmin) {
     <?php if (isset($_GET['guardado']) && ! $errors) { ?><p class="success" role="status">Atención guardada.</p><?php } ?>
     <?= errorSummary($errors, [...array_merge(...array_values($groups)), 'motivo']) ?>
     <p>Para guardar un pendiente basta la fecha. Para cerrar, completa también el código APH y el cantón.</p>
-    <form method="post">
+    <?php
+    $draftKey = $record ? AttentionDrafts::recordKey((int) $record['id']) : AttentionDrafts::newKey($province);
+    $draft = $_SERVER['REQUEST_METHOD'] === 'POST' ? null : AttentionDrafts::find((int) $user->id, $draftKey);
+    ?>
+    <form method="post" data-draft-key="<?= h($draftKey) ?>" data-draft-version="<?= h($formVersion) ?>"<?= $draft ? ' data-draft="'.h(json_encode(['fields' => $draft['fields'], 'version' => $draft['version'], 'saved_at' => date('d/m/Y H:i', strtotime($draft['saved_at']))], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)).'"' : '' ?>>
         <input type="hidden" name="_token" value="<?= h($_SESSION['token']) ?>">
         <input type="hidden" name="version" value="<?= h($formVersion) ?>">
         <?php if (! $record) { ?><input type="hidden" name="solicitud" value="<?= h($requestId) ?>"><?php } ?>
@@ -556,9 +562,9 @@ if ($isAdmin) {
             <label for="motivo">Motivo de la corrección</label>
             <input id="motivo" name="motivo" maxlength="1000" required value="<?= h($reason) ?>"<?= fieldErrorAttributes($errors, 'motivo') ?>>
             <?= fieldErrorMessage($errors, 'motivo') ?>
-            <button class="primary" name="accion" value="corregir"><?= icon('check') ?> Guardar corrección</button>
+            <button class="primary" name="accion" value="corregir" data-shortcut-save aria-keyshortcuts="Control+S"><?= icon('check') ?> Guardar corrección <kbd>Ctrl+S</kbd></button>
         <?php } else { ?>
-            <button name="accion" value="guardar"><?= icon('clock') ?> Guardar pendiente</button>
+            <button name="accion" value="guardar" data-shortcut-save aria-keyshortcuts="Control+S"><?= icon('clock') ?> Guardar pendiente <kbd>Ctrl+S</kbd></button>
             <button class="primary" name="accion" value="cerrar"><?= icon('check') ?> Cerrar atención</button>
         <?php } ?>
         </div>

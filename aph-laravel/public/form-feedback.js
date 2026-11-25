@@ -70,6 +70,24 @@
         event.returnValue = '';
     });
 
+    // Atajos: Ctrl+S (o Cmd+S) guarda la ficha; «/» lleva a la búsqueda de la página.
+    document.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
+            const button = document.querySelector('[data-shortcut-save]');
+            if (!button || document.querySelector('dialog[open]')) return;
+            event.preventDefault();
+            button.form.requestSubmit(button);
+            return;
+        }
+        const typing = event.target.closest?.('input, select, textarea, [contenteditable="true"]');
+        if (event.key === '/' && !typing && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            const search = document.querySelector('[aria-keyshortcuts="/"]');
+            if (!search || document.querySelector('dialog[open]')) return;
+            event.preventDefault();
+            search.focus();
+        }
+    });
+
     document.addEventListener('input', onEdit);
     document.addEventListener('change', onEdit);
     document.addEventListener('focusout', event => {

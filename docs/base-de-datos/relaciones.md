@@ -12,6 +12,7 @@ erDiagram
     operadores o|--o{ accounts : operator_id
     atenciones ||--o{ cambios : atencion
     accounts ||--o| account_invitations : account_id_unico
+    accounts ||--o{ drafts : account_id
     usuarios {
         varchar provincia PK
     }
@@ -52,6 +53,12 @@ erDiagram
         bigint id PK
         bigint account_id FK,UK
         varchar ticket_hash UK
+    }
+    drafts {
+        bigint id PK
+        bigint account_id FK
+        varchar draft_key
+        mediumtext payload
     }
 ```
 

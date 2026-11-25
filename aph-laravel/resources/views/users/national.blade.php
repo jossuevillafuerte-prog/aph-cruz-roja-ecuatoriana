@@ -18,9 +18,9 @@ ob_start();require base_path('legacy/dashboard-vista.php');$dashboard=ob_get_cle
 @if($province)<a class="button" href="/?vista=exportar{{ $provinceQuery }}">{!! icon('download') !!} Exportar cerradas de {{ $provinces[$province]['nombre'] }} a Excel</a>
 <a class="button" href="/?vista=geojson{{ $provinceQuery }}">{!! icon('pin') !!} Exportar ubicaciones de {{ $provinces[$province]['nombre'] }} (GeoJSON)</a>
 @else<small>Filtra por una provincia para exportar a Excel o GeoJSON.</small>@endif</div>
-<nav class="filter-bar attention-kpis" aria-label="Resumen de atenciones">
-@foreach([['','all','list','Total de atenciones registradas',$total],['Cerrada','closed','check','Atenciones cerradas',$counts['Cerrada']??0],['Pendiente','pending','clock','Atenciones pendientes',$counts['Pendiente']??0]] as [$key,$style,$symbol,$label,$count])
-<a class="button status emphasis {{ $style }}" data-state="{{ $key }}" data-count="{{ $count }}" href="{{ '/national?'.http_build_query(['view'=>'atenciones','province'=>$province,'estado'=>$state===$key?'':$key]) }}" aria-pressed="{{ $state===$key?'true':'false' }}">{!! icon($symbol) !!}<span>{{ $label }}<strong>{{ $count }}</strong></span></a>
+<nav class="filter-bar attention-kpis" aria-label="Filtrar atenciones por estado">
+@foreach([['','all','list','Todas',$total],['Cerrada','closed','check','Cerradas',$counts['Cerrada']??0],['Pendiente','pending','clock','Pendientes',$counts['Pendiente']??0]] as [$key,$style,$symbol,$label,$count])
+<a class="button status emphasis {{ $style }}" data-state="{{ $key }}" data-count="{{ $count }}" href="{{ '/national?'.http_build_query(['view'=>'atenciones','province'=>$province,'estado'=>$key]) }}" @if($state===$key) aria-current="page" @endif>{!! icon($symbol) !!}<span>{{ $label }}<strong>{{ $count }}</strong></span></a>
 @endforeach
 </nav>
 

@@ -1,12 +1,12 @@
 # Diccionario físico MySQL
 
-Verificado el 17 de noviembre de 2026 y actualizado el 25 de noviembre de 2026 (atenciones: `solicitud`, `fecha` e índices) contra migraciones y metadatos de MySQL 8.4.13. Incluye las **18 tablas** actuales, incluida migrations. Se consultó information_schema sin leer fichas, credenciales ni filas operativas.
+Verificado el 17 de noviembre de 2026 y actualizado el 25 de noviembre de 2026 (atenciones: `solicitud`, `fecha` e índices; tabla `drafts`) contra migraciones y metadatos de MySQL 8.4. Incluye las **19 tablas** actuales, incluida migrations. Se consultó information_schema sin leer fichas, credenciales ni filas operativas.
 
 ## Convenciones
 
 - PK: clave primaria; UNIQUE: unicidad; FK: integridad referencial física. BIGINT UNSIGNED identifica IDs Laravel. BOOLEAN se materializa como TINYINT(1).
 - `—` en predeterminado: no hay valor explícito para columna NOT NULL; se debe suministrar o lo genera AUTO_INCREMENT. `NULL` en columna nullable representa ausencia.
-- Las acciones FK se indican tal como las informa MySQL. NO ACTION equivale a RESTRICT en InnoDB; no hay borrados en cascada en este esquema.
+- Las acciones FK se indican tal como las informa MySQL. NO ACTION equivale a RESTRICT en InnoDB; el único borrado en cascada es `drafts.account_id`.
 - Los nombres y tipos se reproducen del motor, no de un diseño idealizado. Las reglas de negocio no son automáticamente constraints SQL.
 - Consultar [ERD](relaciones.md) y [contenido JSON](ficha-json.md).
 
@@ -194,6 +194,31 @@ Motor: `InnoDB`. Intercalación: `utf8mb4_unicode_ci`.
 ### Integridad referencial
 
 - `cambios_atencion_foreign`: `atencion` → `atenciones.id`; ON DELETE **NO ACTION**, ON UPDATE **NO ACTION**.
+
+## `drafts`
+
+Borradores de fichas sin guardar, uno por cuenta y ficha. Temporales: se borran al guardar la ficha y a los 7 días.
+
+Motor: `InnoDB`. Intercalación: `utf8mb4_unicode_ci`.
+
+| Campo | Tipo MySQL | NULL | Predeterminado | Extra | Significado |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `bigint unsigned` | NO | `—` | auto_increment | Identificador. |
+| `account_id` | `bigint unsigned` | NO | `—` | — | Cuenta autora del borrador. |
+| `draft_key` | `varchar(80)` | NO | `—` | — | `nueva:{provincia}` o `atencion:{id}`. |
+| `record_version` | `int unsigned` | NO | `0` | — | Versión de la ficha al empezar el borrador. |
+| `payload` | `mediumtext` | NO | `—` | — | Campos del formulario en JSON cifrado con APP_KEY. |
+| `updated_at` | `timestamp` | NO | `—` | — | Último autoguardado; base de la caducidad. |
+
+### Claves e índices
+
+- `PRIMARY`: PK (`id`).
+- `drafts_account_id_draft_key_unique`: UNIQUE (`account_id`, `draft_key`).
+- `drafts_updated_at_index`: INDEX (`updated_at`).
+
+### Integridad referencial
+
+- `drafts_account_id_foreign`: `account_id` → `accounts.id`; ON DELETE **CASCADE**, ON UPDATE **NO ACTION**.
 
 ## `failed_jobs`
 

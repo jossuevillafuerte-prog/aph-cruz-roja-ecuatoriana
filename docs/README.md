@@ -15,7 +15,7 @@
 
 ## Alcance de la entrega
 
-Incluye 18 tablas, 113 campos físicos, claves e índices, ocho relaciones FK y 30 campos institucionales del JSON con sus extensiones. Diferencia constraints SQL de reglas PHP y vínculos lógicos. Documenta tanto funciones activas como componentes heredados que no deben confundirse con ellas.
+Incluye 19 tablas, 121 campos físicos, claves e índices, nueve relaciones FK y 30 campos institucionales del JSON con sus extensiones. Diferencia constraints SQL de reglas PHP y vínculos lógicos. Documenta tanto funciones activas como componentes heredados que no deben confundirse con ellas.
 
 Las guías contienen pasos operativos, responsabilidades por función y criterios de aceptación. **Quedan por completar con decisiones reales**: dominio/alojamiento, SMTP, custodios, canal de soporte, retención clínica, RPO/RTO y aprobación institucional. No son datos que pueda inventar la documentación. También quedan por ejecutar en el destino definitivo: despliegue, carga, auditoría y restauración; las pruebas históricas disponibles se identifican con su fecha.
 
