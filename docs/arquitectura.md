@@ -1,6 +1,6 @@
 # Arquitectura del sistema APH
 
-Versión documental: 1.0 · 17 de noviembre de 2026. Implementación de referencia: commit 78146fa. Audiencia: desarrollo, mantenimiento y revisión técnica. Este documento describe el código actual, no una arquitectura futura.
+Versión documental: 1.1 · 25 de noviembre de 2026. Implementación de referencia: commit 6fa336e y posteriores. Audiencia: desarrollo, mantenimiento y revisión técnica. Este documento describe el código actual, no una arquitectura futura.
 
 ## Propósito y límites
 
@@ -87,7 +87,10 @@ sequenceDiagram
 2. Carga recursos y catálogos de ese ámbito. En fichas nuevas el responsable se asigna desde la cuenta, no desde un campo libre. En correcciones se conserva el responsable previo; el editor actual aparece en el historial.
 3. `guardar` conserva Pendiente; `cerrar` valida campos de cierre; una ficha Cerrada se corrige con `corregir` y motivo. No hay flujo de reapertura implementado.
 4. Se valida recurso provincial, datos y coordenadas. Se preservan excepciones explícitas para valores históricos.
-5. En una transacción se inserta o actualiza la ficha y se escribe cambios. UPDATE incluye id, provincia, version y eliminado IS NULL.
+5. En una transacción se inserta o actualiza la ficha, se escribe cambios y se registra el evento de auditoría; si algo falla, no se guarda nada. UPDATE incluye id, provincia, version y eliminado IS NULL. Las claves del JSON fuera de A–AD se conservan y sus cambios quedan en el historial.
+   - El motivo por defecto describe la acción: creación, actualización de pendiente o cierre.
+   - Cada formulario nuevo lleva un identificador `solicitud` único: un doble envío devuelve la ficha ya creada y, si los datos difieren, se avisa sin descartarlos.
+   - Los errores de validación se devuelven por campo: resumen enlazado y enfocable, mensaje junto al control y `aria-invalid`.
 6. Si la versión cambió, se rechaza el guardado para evitar sobrescribir otra edición; el usuario debe recargar y conciliar.
 7. Eliminar modifica eliminado, incrementa version y deja auditoría; no borra filas ni aplica cascadas.
 
@@ -110,7 +113,7 @@ El modal envía PUT a users.update con CSRF y edit_user_id. Los errores regresan
 
 ## Métricas, mapas y salidas
 
-El dashboard carga fichas no eliminadas del ámbito permitido. Incluye Pendientes y Cerradas; no es transmisión en tiempo real: se actualiza con la carga de página y los filtros locales. JSON estadístico excluye nombre, documento y diagnóstico libre, pero conserva hoja y coordenadas: sigue siendo información de acceso restringido.
+El dashboard carga fichas no eliminadas del ámbito y del periodo elegido (por defecto los últimos 12 meses, hasta 10.000 atenciones; avisa si hay más). MySQL entrega solo los campos del panel, mediante la columna generada `fecha` y sus índices. Incluye Pendientes y Cerradas; no es transmisión en tiempo real: se actualiza con la carga de página y los filtros locales. JSON estadístico excluye nombre, documento y diagnóstico libre, pero conserva hoja y coordenadas: sigue siendo información de acceso restringido.
 
 | Indicador | Definición |
 | --- | --- |
@@ -121,7 +124,7 @@ El dashboard carga fichas no eliminadas del ámbito permitido. Incluye Pendiente
 | Pirámide | 0–4, 5–14, 15–24, 25–34, 35–44, 45–54, 55–64, 65+; edad no válida separada. |
 | Provincias | Conteos de fichas, color relativo al máximo; no tasa por población. |
 
-Los filtros se combinan; seleccionar otra vez una categoría la desactiva. Puntos filtran por ID de ficha. Las provincias conservan orden alfabético. No se muestran gráficos de CIE-10 ni por unidad individual en el panel actual. El dashboard obtiene todas las filas autorizadas para graficar: hay un riesgo de crecimiento de memoria y tamaño de respuesta; no se ha probado carga nacional alta.
+Los filtros se combinan; seleccionar otra vez una categoría la desactiva. Puntos filtran por ID de ficha. Las provincias conservan orden alfabético. No se muestran gráficos de CIE-10 ni por unidad individual en el panel actual. Con 30.000 fichas ficticias, el panel nacional respondió en 0,8 s; el listado provincial se pagina de 30 en 30. El Excel todavía se construye completo en memoria.
 
 Leaflet consume teselas externas. PHP consulta Nominatim con coordenadas redondeadas a cuatro decimales, caché y limitación global de consulta; la ficha guarda hasta seis decimales. Las direcciones son referencias aproximadas. La política Permissions-Policy deshabilita geolocalización del dispositivo: el usuario selecciona el punto manualmente. Las coordenadas consultadas salen al proveedor, aunque no se envíen nombres de pacientes.
 

@@ -219,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data += $locations + preservedData($savedData);
         $errors = array_merge($errors, $locationErrors);
         if (! $validResource) {
-            $errors[] = 'Selecciona un recurso de tu provincia.';
+            addFieldError($errors, 'J', 'Selecciona un recurso de tu provincia.');
         }
         $reason = trim(is_string($_POST['motivo'] ?? null) ? $_POST['motivo'] : '');
         $submittedVersion = is_string($_POST['version'] ?? null) ? $_POST['version'] : '';
@@ -228,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $formVersion = $submittedVersion;
         if (($closed && $reason === '') || strlen($reason) > 1000) {
-            $errors[] = 'Ingresa un motivo de corrección de hasta 1000 caracteres.';
+            addFieldError($errors, 'motivo', 'Ingresa un motivo de corrección de hasta 1000 caracteres.');
         }
         if (! $errors) {
             try {
@@ -251,13 +251,6 @@ $groups = [
     'Evento y despacho' => ['B', 'C', 'F', 'G', 'H', 'I', 'J', 'K'],
     'Paciente y diagnóstico' => ['L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U'],
     'Destino y operación' => ['W', 'X', 'Z', 'AA', 'AB', 'AC', 'AD'],
-];
-$labels = [
-    'B' => 'Fecha de atención', 'C' => 'Código APH', 'F' => 'Evento o causa', 'G' => 'Cantón', 'H' => 'Dirección del evento',
-    'I' => 'Hora de llegada', 'J' => 'Recurso despachado', 'K' => 'Número de hoja de atención', 'L' => 'Nombres y apellidos',
-    'M' => 'Tipo de identificación', 'N' => 'Número de identificación', 'T' => 'Diagnóstico descrito', 'U' => 'Código CIE-10',
-    'W' => 'Localidad de destino', 'X' => 'Médico de recepción', 'Z' => 'Kilometraje de salida', 'AA' => 'Kilometraje de llegada',
-    'AB' => 'Combustible de salida', 'AC' => 'Combustible de llegada', 'R' => 'Condición',
 ];
 $filter = $_GET['estado'] ?? '';
 $filter = in_array($filter, ['Pendiente', 'Cerrada'], true) ? $filter : '';
@@ -283,7 +276,7 @@ if ($isAdmin) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Registro APH · <?= h($territory['nombre']) ?></title>
     <link rel="stylesheet" href="estilos.css">
-    <script src="catalogo.js" defer></script>
+    <script src="catalogo.js" defer></script><script src="/form-feedback.js" defer></script>
     <meta name="csrf-token" content="<?= h(csrf_token()) ?>"><meta name="session-user" content="<?= h((string) $user->id) ?>"><script src="/session-security.js" defer></script>
     <?php if ($printView) { ?><link rel="stylesheet" href="impresion.css"><script src="impresion.js" defer></script><?php } ?>
     <?php if ($dashboardView || ($editing && ! $deleteView && ! $printView)) { ?>
@@ -439,9 +432,7 @@ if ($isAdmin) {
     <div class="heading"><h1><?= $record ? 'Hoja de atención '.h($savedData['K'] ?: 'sin número') : 'Nueva atención' ?></h1>
     <span class="badge status <?= $statusClasses[$record['estado'] ?? ''] ?? 'all' ?>"><?= h($record['estado'] ?? 'Sin guardar') ?></span></div>
     <?php if (isset($_GET['guardado']) && ! $errors) { ?><p class="success" role="status">Atención guardada.</p><?php } ?>
-    <?php if ($errors) { ?><div class="errors" role="alert"><ul>
-        <?php foreach ($errors as $error) { ?><li><?= h($error) ?></li><?php } ?>
-    </ul></div><?php } ?>
+    <?= errorSummary($errors, [...array_merge(...array_values($groups)), 'motivo']) ?>
     <p>Para guardar un pendiente basta la fecha. Para cerrar, completa también el código APH y el cantón.</p>
     <form method="post">
         <input type="hidden" name="_token" value="<?= h($_SESSION['token']) ?>">
@@ -450,7 +441,7 @@ if ($isAdmin) {
         <?php foreach ($groups as $title => $keys) { ?>
             <fieldset class="card"><legend><?= h($title) ?></legend><div class="grid">
             <?php foreach ($keys as $key) {
-                $label = $labels[$key] ?? FIELDS[$key];
+                $label = fieldLabel($key);
                 $value = $data[$key] ?? '';
                 $type = match ($key) {
                     'B' => 'date', 'I' => 'time', 'P','Z','AA' => 'number', default => 'text'
@@ -458,7 +449,7 @@ if ($isAdmin) {
                 ?>
                 <div class="field"><label for="f-<?= $key ?>"><?= h($label) ?></label>
                 <?php if ($key === 'J') { ?>
-                    <select id="f-J" name="recurso_id">
+                    <select id="f-J" name="recurso_id"<?= fieldErrorAttributes($errors, 'J') ?>>
                         <option value="">Selecciona un recurso</option>
                         <?php foreach ($resources as $item) { ?>
                             <option value="<?= h($item['id']) ?>" <?= $resourceId === (int) $item['id'] ? 'selected' : '' ?>><?= h($item['numero'].' · '.$item['ubicacion']) ?></option>
@@ -470,7 +461,7 @@ if ($isAdmin) {
                     <?php } ?>
                     <?php if (! $resources) { ?><small>Agrega una unidad en <a href="?vista=recursos">Recursos</a> antes de asignarla.</small><?php } ?>
                 <?php } elseif ($key === 'F') { ?>
-                    <select id="f-F" name="F"><option value="">Selecciona un tipo o subtipo</option>
+                    <select id="f-F" name="F"<?= fieldErrorAttributes($errors, 'F') ?>><option value="">Selecciona un tipo o subtipo</option>
                         <?php if (! empty($savedData['F']) && ! in_array($savedData['F'], $catalog['lists']['F'], true)) { ?>
                             <option value="<?= h($savedData['F']) ?>" <?= $value === $savedData['F'] ? 'selected' : '' ?>><?= h($savedData['F']) ?> (registro anterior)</option>
                         <?php } ?>
@@ -490,7 +481,7 @@ if ($isAdmin) {
                         <?php } ?>
                     </select>
                 <?php } elseif (isset($catalog['lists'][$key])) { ?>
-                    <select id="f-<?= $key ?>" name="<?= $key ?>">
+                    <select id="f-<?= $key ?>" name="<?= $key ?>"<?= fieldErrorAttributes($errors, $key) ?>>
                         <option value="">Selecciona una opción</option>
                         <?php if ($key === 'G' && ! empty($savedData['G']) && ! in_array($savedData['G'], $catalog['lists']['G'], true)) { ?>
                             <option value="<?= h($savedData['G']) ?>" <?= $value === $savedData['G'] ? 'selected' : '' ?>><?= h($savedData['G']) ?> (registro anterior)</option>
@@ -500,9 +491,9 @@ if ($isAdmin) {
                         <?php } ?>
                     </select>
                 <?php } elseif (in_array($key, ['T', 'AD'], true)) { ?>
-                    <textarea id="f-<?= $key ?>" name="<?= $key ?>" maxlength="4000"><?= h($value) ?></textarea>
+                    <textarea id="f-<?= $key ?>" name="<?= $key ?>" maxlength="4000"<?= fieldErrorAttributes($errors, $key) ?>><?= h($value) ?></textarea>
                 <?php } elseif ($key === 'U') { ?>
-                    <input id="f-U" name="U" value="<?= h($value) ?>" placeholder="Ej. U07.1" autocomplete="off">
+                    <input id="f-U" name="U" value="<?= h($value) ?>" placeholder="Ej. U07.1" autocomplete="off"<?= fieldErrorAttributes($errors, 'U', 'cie-description') ?>>
                     <small id="cie-description"><?= h($data['V'] ?? '') ?></small>
                     <details id="cie-picker"><summary>Ver listado completo de CIE-10</summary>
                         <label for="cie-search">Buscar por código o descripción</label>
@@ -511,13 +502,14 @@ if ($isAdmin) {
                         <div class="actions"><button id="cie-prev" type="button" disabled>Anterior</button><button id="cie-next" type="button" disabled>Siguiente</button></div>
                     </details>
                 <?php } elseif ($key === 'N') { ?>
-                    <input id="f-N" name="N" value="<?= h($value) ?>" autocomplete="off">
+                    <input id="f-N" name="N" value="<?= h($value) ?>" autocomplete="off"<?= fieldErrorAttributes($errors, 'N', 'documento-ayuda') ?>>
                     <small id="documento-ayuda">Selecciona el tipo de documento.</small>
                 <?php } else { ?>
                     <input id="f-<?= $key ?>" name="<?= $key ?>" type="<?= $type ?>" value="<?= h($value) ?>"
                         <?= $key === 'B' ? 'required' : '' ?> <?= $type === 'number' ? 'min="0"' : '' ?>
-                        <?= $key === 'P' ? 'max="120"' : '' ?> <?= in_array($key, ['Z', 'AA'], true) ? 'step="any"' : '' ?>>
+                        <?= $key === 'P' ? 'max="120"' : '' ?> <?= in_array($key, ['Z', 'AA'], true) ? 'step="any"' : '' ?><?= fieldErrorAttributes($errors, $key) ?>>
                 <?php } ?>
+                <?= fieldErrorMessage($errors, $key) ?>
                 <?php if (in_array($key, ['H', 'W'], true)) {
                     $point = $key === 'H' ? 'evento' : 'destino';
                     $latitude = $data[$point.'_lat'] ?? null;
@@ -559,7 +551,8 @@ if ($isAdmin) {
         <div class="actions">
         <?php if ($closed) { ?>
             <label for="motivo">Motivo de la corrección</label>
-            <input id="motivo" name="motivo" maxlength="1000" required value="<?= h($reason) ?>">
+            <input id="motivo" name="motivo" maxlength="1000" required value="<?= h($reason) ?>"<?= fieldErrorAttributes($errors, 'motivo') ?>>
+            <?= fieldErrorMessage($errors, 'motivo') ?>
             <button class="primary" name="accion" value="corregir"><?= icon('check') ?> Guardar corrección</button>
         <?php } else { ?>
             <button name="accion" value="guardar"><?= icon('clock') ?> Guardar pendiente</button>

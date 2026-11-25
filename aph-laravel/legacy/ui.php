@@ -41,3 +41,47 @@ function accountAvatar(array $account): string
     return '<span class="avatar" aria-hidden="true">'.($account['tiene_imagen']
         ? '<img src="?vista=avatar" width="40" height="40" alt="">' : icon('profile')).'</span>';
 }
+
+function fieldId(string $key): string
+{
+    return $key === 'motivo' ? 'motivo' : 'f-'.$key;
+}
+
+/**
+ * @param  array<int|string, string>  $errors
+ */
+function fieldErrorAttributes(array $errors, string $key, string $help = ''): string
+{
+    $described = trim($help.(isset($errors[$key]) ? ' '.fieldId($key).'-error' : ''));
+
+    return (isset($errors[$key]) ? ' aria-invalid="true"' : '').($described !== '' ? ' aria-describedby="'.h($described).'"' : '');
+}
+
+/**
+ * @param  array<int|string, string>  $errors
+ */
+function fieldErrorMessage(array $errors, string $key): string
+{
+    return isset($errors[$key]) ? '<p class="field-error" id="'.h(fieldId($key)).'-error">'.h($errors[$key]).'</p>' : '';
+}
+
+/**
+ * Resumen enfocable: cada error de campo enlaza a su control.
+ *
+ * @param  array<int|string, string>  $errors
+ * @param  list<string>  $linkable
+ */
+function errorSummary(array $errors, array $linkable): string
+{
+    if (! $errors) {
+        return '';
+    }
+    $items = '';
+    foreach ($errors as $key => $message) {
+        $items .= is_string($key) && in_array($key, $linkable, true)
+            ? '<li><a href="#'.h(fieldId($key)).'">'.h($message).'</a></li>'
+            : '<li>'.h($message).'</li>';
+    }
+
+    return '<div class="errors" role="alert" id="form-errors" tabindex="-1"><h2>Revisa '.(count($errors) === 1 ? 'este dato' : 'estos '.count($errors).' datos').'</h2><ul>'.$items.'</ul></div>';
+}

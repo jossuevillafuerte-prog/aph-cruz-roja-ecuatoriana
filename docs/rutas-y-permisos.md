@@ -29,8 +29,8 @@ Fuentes: routes/web.php, bootstrap/app.php y `php artisan route:list --json --ex
 
 | vista / parámetro | Método | Operación |
 | --- | --- | --- |
-| sin vista | GET | Dashboard provincial; nacional sin ámbito se redirige. |
-| atenciones | GET | Listado provincial; nacional redirige al listado nacional. |
+| sin vista | GET | Dashboard provincial; desde, hasta (Y-m-d) o periodo=todo. Nacional se redirige a /national, que acepta los mismos parámetros. |
+| atenciones | GET | Listado provincial paginado (pagina, estado); nacional redirige al listado nacional. |
 | nueva | GET / POST | Crear ficha; accion=guardar/cerrar. |
 | id=ID, sin vista especial | GET / POST | Abrir ficha y guardar/corregir; version controla concurrencia. |
 | eliminar&id=ID | POST | Borrado lógico con CSRF, provincia y versión. GET conserva vista de confirmación de compatibilidad. |
@@ -50,7 +50,7 @@ Fuentes: routes/web.php, bootstrap/app.php y `php artisan route:list --json --ex
 | --- | --- | --- |
 | Dashboard | Su provincia | Todas las provincias y filtro |
 | Leer/corregir fichas | Todas las de su provincia | Todas las provincias |
-| Eliminar fichas | Cualquier ficha propia de su provincia, con auditoría | Nacional, con auditoría |
+| Eliminar fichas | Cualquier ficha de su provincia, con auditoría | Nacional, con auditoría |
 | Crear ficha/gestionar recursos | Su provincia | Provincia seleccionada |
 | Crear/editar/suspender usuarios | No | Sí; no desactivar ni degradar su propia cuenta |
 | Perfil/clave/avatar | Propios | Propios |

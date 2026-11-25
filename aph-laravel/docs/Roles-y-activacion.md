@@ -36,7 +36,7 @@ El flujo preparado genera invitación y código numérico de seis dígitos, de u
 
 ## Operación
 
-Aplicación local: http://127.0.0.1:8090/login. En producción se requiere HTTPS y cookie Secure. El acceso nacional inicial está en C:/Users/Chosto/AppData/Local/APH-Piloto/superadministrador-laravel.txt. El archivo de claves provinciales original conserva su ubicación y contenido.
+Aplicación local: http://127.0.0.1:8090/login. En producción se requiere HTTPS y cookie Secure. La credencial nacional inicial se entregó por canal privado; su ubicación no se documenta en el repositorio. El archivo de claves provinciales original conserva su ubicación y contenido.
 
 Se creó una copia cifrada de MySQL antes de cambiar identidades. No se alteraron las fichas, recursos ni su historial. La migración agregó cuentas y vínculos de operadores para las cuentas provinciales. Para revertir identidades debe restaurarse una copia verificada; no se realiza un rollback destructivo automático.
 

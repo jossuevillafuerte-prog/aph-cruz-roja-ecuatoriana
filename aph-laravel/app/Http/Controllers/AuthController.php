@@ -22,7 +22,7 @@ class AuthController extends Controller
         $key = 'login:'.hash('sha256', $v['usuario']);
         $ip = 'login-ip:'.hash('sha256', $r->ip());
         if (RateLimiter::tooManyAttempts($key, 5) || RateLimiter::tooManyAttempts($ip, 50)) {
-            return redirect()->route('login')->withErrors(['login' => 'Demasiados intentos. Espera 5 minutos y vuelve a intentar.'])->setStatusCode(429);
+            return redirect()->route('login')->withInput($r->only('usuario'))->withErrors(['login' => 'Demasiados intentos. Espera 5 minutos y vuelve a intentar.'])->setStatusCode(429);
         }
         $user = Auth::getProvider()->retrieveByCredentials($v);
         $valid = $user ? Auth::getProvider()->validateCredentials($user, $v) : password_verify($v['password'], '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.');
@@ -35,7 +35,7 @@ class AuthController extends Controller
                 Security::event('login_throttled', null, $target);
             }
 
-            return redirect()->route('login')->withErrors(['login' => 'Los datos de acceso no son correctos.']);
+            return redirect()->route('login')->withInput($r->only('usuario'))->withErrors(['login' => 'El usuario o la contraseña no son correctos. Revísalos e inténtalo de nuevo.']);
         }
         Auth::login($user, false);
         $r->session()->regenerate();

@@ -28,7 +28,7 @@ composer check-platform-reqs
 cp .env.example .env
 ```
 
-Configurar `.env` según [entorno](configuracion.md). Crear previamente base `aph` y usuarios MySQL separados: migración con DDL y aplicación con SELECT/INSERT/UPDATE/DELETE sobre esa base. No exponer puerto MySQL a internet. Si MySQL es remoto, configurar TLS y verificar la conexión. Mantener secretos fuera del checkout compartido y nunca dentro de public/.
+Configurar `.env` según [entorno](configuracion.md). Crear previamente base `aph` y usuarios MySQL separados: migración con DDL y aplicación con SELECT/INSERT/UPDATE/DELETE sobre esa base. La aplicación tiene una sola conexión (DB_USERNAME): ejecutar las migraciones sin configuración en caché pasando el usuario con DDL como variables de entorno del proceso (que prevalecen sobre .env) y dejar en .env el de mínimos privilegios. No exponer puerto MySQL a internet. Si MySQL es remoto, configurar TLS y verificar la conexión. Mantener secretos fuera del checkout compartido y nunca dentro de public/.
 
 Solo para una instalación nueva, después de disponer de .env:
 

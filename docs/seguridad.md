@@ -1,6 +1,6 @@
 # Seguridad y privacidad: estado vigente
 
-Revisión técnica documental: 17 de noviembre de 2026. Sustituye las referencias a MFA y mínimo de seis caracteres de documentos históricos. No es auditoría externa, dictamen legal ni certificación.
+Revisión técnica documental: 25 de noviembre de 2026. Sustituye las referencias a MFA y mínimo de seis caracteres de documentos históricos. No es auditoría externa, dictamen legal ni certificación.
 
 ## Controles implementados
 
@@ -12,7 +12,7 @@ Revisión técnica documental: 17 de noviembre de 2026. Sustituye las referencia
 | Contraseñas filtradas | Prefijo SHA-1 de cinco caracteres a Pwned Passwords; cotejo local de sufijo. Rechazo ante filtración o indisponibilidad; no se envía contraseña completa. |
 | Intentos | Cinco fallos por usuario y 50 por IP en cinco minutos. El usuario debe coincidir exactamente, también en tildes. Mensaje de login genérico. |
 | Sesión | MySQL, payload cifrado, ID rotado al autenticar; credencial derivada de hash/revisión. |
-| Tiempo | Aviso a ocho minutos, expiración a diez de inactividad y ocho horas absolutas. No hay autoguardado. |
+| Tiempo | Aviso a ocho minutos, expiración a diez de inactividad y ocho horas absolutas. Con cambios sin guardar, la pantalla se pausa y la ficha se recupera al reingresar con el mismo usuario; los datos quedan solo en la memoria de esa pestaña durante 30 minutos. No hay autoguardado en servidor. |
 | Cookies | HttpOnly, SameSite Strict, Secure en producción, sin contraseña almacenada. HTTP local tiene excepción explícita. |
 | Logout | POST+CSRF, invalidación de sesión y renovación de token; comunicación entre pestañas. |
 | Autorización | Middleware nacional y consultas limitadas por provincia; edición/eliminación de cualquier ficha del ámbito, con auditoría. |

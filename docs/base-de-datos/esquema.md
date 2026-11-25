@@ -1,6 +1,6 @@
 # Diccionario físico MySQL
 
-Verificado el 17 de noviembre de 2026 contra migraciones y metadatos de MySQL 8.4.13. Incluye las **18 tablas** actuales, incluida migrations. Se consultó information_schema sin leer fichas, credenciales ni filas operativas.
+Verificado el 17 de noviembre de 2026 y actualizado el 25 de noviembre de 2026 (atenciones: `solicitud`, `fecha` e índices) contra migraciones y metadatos de MySQL 8.4.13. Incluye las **18 tablas** actuales, incluida migrations. Se consultó information_schema sin leer fichas, credenciales ni filas operativas.
 
 ## Convenciones
 

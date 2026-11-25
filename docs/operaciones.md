@@ -67,7 +67,8 @@ Rotar logs de aplicación, FPM, Nginx y MySQL. Evitar registrar payloads, docume
 | 429 | Límite de intentos o invitaciones | Esperar ventana y revisar causa; no eliminar protección global. |
 | Clave nueva rechazada por verificación | Certificados CA, reloj, DNS y HTTPS a Pwned Passwords | Reparar confianza/conectividad. El servicio falla de forma cerrada. |
 | Mapas bloqueados/vacíos | Red del navegador, teselas, CSP, atribución y Referer | Verificar respuesta del proveedor; strict-origin, sin añadir datos clínicos a URLs. |
-| Pin sin dirección | PHP curl, geocodificador, rate limit/caché | Esperar y reintentar; revisar referencia manualmente según formulario, no inventar dirección. |
+| Pin sin dirección | PHP curl, geocodificador, límite global de una consulta cada 2 s, caché | Reintentar más tarde; el texto escrito se conserva. Una dirección vacía queda en caché: revisarla manualmente. |
+| «Trabajo en pausa» | Sesión vencida con cambios sin guardar | Iniciar sesión con el mismo usuario en otra pestaña y pulsar Reanudar antes de 30 minutos; no recargar ni cerrar la pestaña. |
 | Guardado concurrente rechazado | version cambió | Recargar, comparar historial y volver a aplicar cambios conciliados. |
 | 500 de MySQL | Servicio, permisos y migraciones | Consultar log privado sin publicar secretos; no ejecutar fresh. |
 | Correo no llega | Bandera, transporte/remitente, respuesta SMTP, vencimiento | Resolver SMTP y reenviar; código anterior queda invalidado. |

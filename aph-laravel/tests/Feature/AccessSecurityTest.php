@@ -287,7 +287,7 @@ class AccessSecurityTest extends TestCase
     {
         $this->withHeader('Referer', 'http://localhost/');
         $this->post('/login', ['usuario' => 'azuay', 'password' => 'wrong'])->assertRedirect(route('login'));
-        $this->get('/login')->assertSee('Los datos de acceso no son correctos.');
+        $this->get('/login')->assertSee('El usuario o la contraseña no son correctos.');
         $this->post('/login', [])->assertRedirect(route('login'))->assertSessionHasErrors(['usuario', 'password']);
         $activation = '/activate/'.str_repeat('a', 64);
         $this->post($activation, [])->assertRedirect($activation)->assertSessionHasErrors('code');

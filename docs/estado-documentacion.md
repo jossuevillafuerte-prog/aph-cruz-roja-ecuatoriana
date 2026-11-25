@@ -1,12 +1,12 @@
 # Estado de entrega documental
 
-Actualizado: 17 de noviembre de 2026. Se completó el paquete documental del sistema actual; la aceptación operativa institucional continúa pendiente.
+Actualizado: 25 de noviembre de 2026, tras las correcciones de la auditoría. Se completó el paquete documental del sistema actual; la aceptación operativa institucional continúa pendiente.
 
 | Requisito solicitado | Entrega |
 | --- | --- |
 | Arquitectura y flujo MVC/adaptador | arquitectura.md con componentes, secuencia y estados |
 | Lenguajes, frameworks y plugins | dependencias.md y arquitectura.md |
-| MySQL: tablas, campos, tipos, nulos y defaults | base-de-datos/esquema.md: 18 tablas, 113 campos |
+| MySQL: tablas, campos, tipos, nulos y defaults | base-de-datos/esquema.md: 18 tablas, 115 campos (incluye `solicitud` y `fecha` de atenciones) |
 | PK, FK, índices y acciones referenciales | Diccionario y base-de-datos/relaciones.md; 8 FK físicas |
 | ERD y mapeo Eloquent | Mermaid y explicación del Query Builder/PDO real, sin relaciones Eloquent ficticias |
 | JSON/catálogos institucionales | base-de-datos/ficha-json.md: A–AD y extensiones |

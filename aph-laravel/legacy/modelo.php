@@ -16,11 +16,34 @@ const FIELDS = [
     'AA' => 'km_llegada', 'AB' => 'combustible_salida', 'AC' => 'combustible_llegada', 'AD' => 'Observaciones',
 ];
 const DERIVED = ['A', 'D', 'E', 'V'];
+const FIELD_LABELS = [
+    'B' => 'Fecha de atención', 'C' => 'Código APH', 'F' => 'Evento o causa', 'G' => 'Cantón', 'H' => 'Dirección del evento',
+    'I' => 'Hora de llegada', 'J' => 'Recurso despachado', 'K' => 'Número de hoja de atención', 'L' => 'Nombres y apellidos',
+    'M' => 'Tipo de identificación', 'N' => 'Número de identificación', 'O' => 'Sexo', 'P' => 'Edad', 'Q' => 'Nacionalidad',
+    'R' => 'Condición', 'S' => 'Discapacidad', 'T' => 'Diagnóstico descrito', 'U' => 'Código CIE-10',
+    'W' => 'Localidad de destino', 'X' => 'Médico de recepción', 'Y' => 'Responsable', 'Z' => 'Kilometraje de salida',
+    'AA' => 'Kilometraje de llegada', 'AB' => 'Combustible de salida', 'AC' => 'Combustible de llegada', 'AD' => 'Observaciones',
+];
 const CLOSING_FIELDS = ['B', 'C', 'G', 'Y'];
 const DASHBOARD_FIELDS = ['B', 'D', 'F', 'G', 'K', 'M', 'O', 'P', 'Q', 'R', 'S', 'J', 'Z', 'AA', 'evento_lat', 'evento_lon', 'destino_lat', 'destino_lon', 'recurso_tipo'];
 const DASHBOARD_LIMIT = 10000;
 const ATTENTIONS_PER_PAGE = 30;
 const LOCATIONS = ['evento' => 'Ubicación del evento', 'destino' => 'Ubicación del destino'];
+
+function fieldLabel(string $key): string
+{
+    return FIELD_LABELS[$key] ?? str_replace('_', ' ', FIELDS[$key] ?? $key);
+}
+
+/**
+ * Conserva el primer error de cada campo para mostrarlo junto a él.
+ *
+ * @param  array<int|string, string>  $errors
+ */
+function addFieldError(array &$errors, string $key, string $message): void
+{
+    $errors[$key] ??= $message;
+}
 
 function validateLocations(array $input, array $previous): array
 {
@@ -44,7 +67,7 @@ function validateLocations(array $input, array $previous): array
         }
         if (! is_string($latitude) || ! is_string($longitude) || ! is_numeric($latitude) || ! is_numeric($longitude)
             || abs((float) $latitude) > 90 || abs((float) $longitude) > 180) {
-            $errors[] = "$label: vuelve a seleccionar el punto en el mapa.";
+            addFieldError($errors, $key === 'evento' ? 'H' : 'W', "$label: vuelve a seleccionar el punto en el mapa.");
             $locations[$lat] = $previous[$lat] ?? null;
             $locations[$lon] = $previous[$lon] ?? null;
 
@@ -111,55 +134,55 @@ function validate(array $input, array $catalog, bool $closed, array $previous = 
     foreach (array_diff(array_keys(FIELDS), DERIVED) as $key) {
         $data[$key] = trim(is_string($input[$key] ?? null) ? $input[$key] : '');
         if (strlen($data[$key]) > 4000) {
-            $errors[] = FIELDS[$key].': supera la longitud admitida.';
+            addFieldError($errors, $key, fieldLabel($key).': supera los 4000 caracteres admitidos.');
         }
     }
     foreach ($closed ? CLOSING_FIELDS : ['B'] as $key) {
         if ($data[$key] === '') {
-            $errors[] = 'Completa '.FIELDS[$key].'.';
+            addFieldError($errors, $key, 'Completa «'.fieldLabel($key).'».');
         }
     }
     if ($data['B'] !== '') {
         $date = DateTimeImmutable::createFromFormat('!Y-m-d', $data['B']);
         if (! $date || $date->format('Y-m-d') !== $data['B']) {
-            $errors[] = 'Ingresa una fecha de atención válida.';
+            addFieldError($errors, 'B', 'Ingresa una fecha de atención válida.');
         }
     }
     if ($data['I'] !== '' && ! preg_match('/\A(?:[01]\d|2[0-3]):[0-5]\d\z/', $data['I'])) {
-        $errors[] = 'Ingresa una hora válida.';
+        addFieldError($errors, 'I', 'Ingresa una hora válida, por ejemplo 14:30.');
     }
     if ($data['P'] !== '' && (! ctype_digit($data['P']) || (int) $data['P'] > 120)) {
-        $errors[] = 'La edad debe ser un entero entre 0 y 120.';
+        addFieldError($errors, 'P', 'La edad debe ser un número entero entre 0 y 120.');
     }
     foreach (['Z', 'AA'] as $key) {
         if ($data[$key] !== '' && (! is_numeric($data[$key]) || ! is_finite((float) $data[$key]) || (float) $data[$key] < 0)) {
-            $errors[] = FIELDS[$key].': ingresa un número no negativo.';
+            addFieldError($errors, $key, fieldLabel($key).': ingresa un número igual o mayor que 0.');
         }
     }
     $odometerChanged = $data['Z'] !== ($previous['Z'] ?? '') || $data['AA'] !== ($previous['AA'] ?? '');
     if ($odometerChanged && is_numeric($data['Z']) && is_numeric($data['AA']) && (float) $data['AA'] < (float) $data['Z']) {
-        $errors[] = 'El kilometraje de llegada debe ser igual o mayor que el de salida.';
+        addFieldError($errors, 'AA', 'El kilometraje de llegada debe ser igual o mayor que el de salida.');
     }
     foreach ($catalog['lists'] as $key => $options) {
         $legacyValue = in_array($key, ['F', 'G'], true) && $data[$key] === ($previous[$key] ?? null);
         if (! $legacyValue && $data[$key] !== '' && ! in_array($data[$key], $options, true)) {
-            $errors[] = FIELDS[$key].': selecciona un valor del catálogo.';
+            addFieldError($errors, $key, fieldLabel($key).': selecciona una opción de la lista.');
         }
     }
     $noDocument = ['', 'No identificado', 'Rehusa identificarse'];
     $documentChanged = $data['M'] !== ($previous['M'] ?? '') || $data['N'] !== ($previous['N'] ?? '');
     if ($documentChanged || ! $previous) {
         if (in_array($data['M'], $noDocument, true) && $data['N'] !== '') {
-            $errors[] = 'Selecciona un tipo de documento válido para ingresar su número.';
+            addFieldError($errors, 'N', 'Selecciona un tipo de documento antes de ingresar su número.');
         } elseif ($data['N'] !== '' && $data['M'] === 'Cédula de identidad' && ! preg_match('/\A[0-9]{10}\z/', $data['N'])) {
-            $errors[] = 'La cédula ecuatoriana debe contener exactamente 10 dígitos.';
+            addFieldError($errors, 'N', 'La cédula ecuatoriana debe contener exactamente 10 dígitos.');
         } elseif ($data['N'] !== '' && ! preg_match('/\A(?=.*[A-Za-z0-9])[A-Za-z0-9 .\/-]{1,80}\z/', $data['N'])) {
-            $errors[] = 'Ingresa el número tal como aparece en el documento (letras, números, espacios, puntos, barras o guiones).';
+            addFieldError($errors, 'N', 'Ingresa el número tal como aparece en el documento (letras, números, espacios, puntos, barras o guiones).');
         } elseif ($closed && ! in_array($data['M'], $noDocument, true) && $data['N'] === '') {
-            $errors[] = 'Completa el número del documento seleccionado para cerrar la atención.';
+            addFieldError($errors, 'N', 'Completa el número del documento seleccionado para cerrar la atención.');
         }
     } elseif ($closed && ! in_array($data['M'], $noDocument, true) && $data['N'] === '') {
-        $errors[] = 'Completa el número del documento seleccionado para cerrar la atención.';
+        addFieldError($errors, 'N', 'Completa el número del documento seleccionado para cerrar la atención.');
     }
     if (isset($catalog['aph'][$data['C']])) {
         $data['A'] = substr($data['C'], 0, 3);
@@ -178,7 +201,7 @@ function validate(array $input, array $catalog, bool $closed, array $previous = 
         if ($data['V'] === '' && $data['U'] === ($previous['U'] ?? null)) {
             $data['V'] = $previous['V'] ?? '';
         } elseif ($data['V'] === '') {
-            $errors[] = 'Selecciona un código CIE-10 válido.';
+            addFieldError($errors, 'U', 'Selecciona un código CIE-10 de la lista.');
         }
     }
 

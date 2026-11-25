@@ -1,6 +1,6 @@
 # Documentación APH · Cruz Roja Ecuatoriana
 
-**Edición documental 1.0 — 17 de noviembre de 2026.** Implementación revisada: commit 78146fa. Documentación del sistema Laravel/MySQL existente, sin alterar lógica ni registros. Los documentos describen el piloto y un procedimiento de despliegue propuesto; no acreditan un despliegue productivo ni certificación.
+**Edición documental 1.1 — 25 de noviembre de 2026.** Implementación revisada: commit 6fa336e y correcciones posteriores. Documentación del sistema Laravel/MySQL existente, sin alterar lógica ni registros. Los documentos describen el piloto y un procedimiento de despliegue propuesto; no acreditan un despliegue productivo ni certificación.
 
 ## Lectura por audiencia
 

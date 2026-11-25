@@ -9,7 +9,7 @@ Plantilla: `aph-laravel/.env.example`. Nunca publicar .env, APP_KEY, contraseña
 | APP_DEBUG | Detalle de errores | Solo local aislado | false |
 | APP_KEY | Cifrado y HMAC | Generar una vez | Clave privada estable, respaldada |
 | APP_URL | URLs absolutas/activación | http://127.0.0.1:8090 | URL pública HTTPS pendiente |
-| APP_LOCALE / APP_FALLBACK_LOCALE | Mensajes del framework | Plantilla en en | Evaluar traducciones; textos propios están en español |
+| APP_LOCALE / APP_FALLBACK_LOCALE | Idioma de los mensajes de validación | es (lang/es/validation.php) | es |
 | DB_CONNECTION | Driver | mysql | mysql |
 | DB_HOST / DB_PORT | Servidor MySQL | Piloto 127.0.0.1:3308 | Host privado y puerto de infraestructura |
 | MYSQL_ATTR_SSL_CA | CA para MySQL remoto, soportada en config/database.php | Normalmente no requerida en localhost | Ruta privada a CA validada si DB es remota |
@@ -36,13 +36,13 @@ Plantilla: `aph-laravel/.env.example`. Nunca publicar .env, APP_KEY, contraseña
 | AWS_*, REDIS_*, MEMCACHED_HOST, BROADCAST_CONNECTION | Opciones de plantilla | No necesarias para piloto | No son servicios implementados por el solo hecho de figurar en .env |
 | VITE_APP_NAME | Build Vite opcional | Nombre | Solo si se construye ese frontend |
 
-Los 600 segundos de inactividad y 28800 de duración absoluta se fijan en SessionLimits; cambiar SESSION_LIFETIME por sí solo no cambia la política funcional. El aviso a los ocho minutos lo gestiona el cliente.
+Los 600 segundos de inactividad y 28800 de duración absoluta se repiten en SessionLimits, AuthController::status, public/session-security.js y la vista sessions; cambiarlos exige actualizar los cuatro. cambiar SESSION_LIFETIME por sí solo no cambia la política funcional. El aviso a los ocho minutos lo gestiona el cliente.
 
 ## Integraciones y fallos
 
 - Pwned Passwords: HTTPS desde PHP, solo prefijo SHA-1 de cinco caracteres. Fallo de TLS/red rechaza establecer clave nueva con mensaje específico; no bloquea el login con hash existente. Mantener CA y reloj correctos.
 - OpenStreetMap: teselas desde el navegador; requiere acceso al proveedor y atribución. Referrer-Policy strict-origin transmite origen sin rutas clínicas. Una CSP del alojamiento debe permitir teselas, scripts/estilos y los elementos inline reales; no copiar una CSP restrictiva sin pruebas.
-- Nominatim: PHP envía coordenadas redondeadas, sin nombres/documentos. Caché SQL por hash; límite temporal con Cache::add por dos segundos. Fallo devuelve dirección vacía, no inventa una ubicación. Aprobar uso del proveedor y de coordenadas con el responsable de datos.
+- Nominatim: PHP envía coordenadas redondeadas, sin nombres/documentos. El navegador conserva el texto escrito: solo completa direcciones vacías o propone la sugerida, y explica si la búsqueda falla. Caché SQL por hash; límite temporal con Cache::add por dos segundos. Fallo devuelve dirección vacía, no inventa una ubicación. Aprobar uso del proveedor y de coordenadas con el responsable de datos.
 - SMTP: deshabilitado por defecto. Nunca activar con MAIL_MAILER=log en producción, pues el mensaje contiene código y enlace. Un envío fallido invalida la invitación creada. No existe garantía de entrega solo por aceptar SMTP.
 
 Los dominios permitidos se mantienen en config/institution.php, no en un comodín. Se admiten el dominio nacional y exactamente los 24 dominios provinciales. Aceptar un dominio no acredita que el buzón exista. Una cuenta de pruebas con correo registrado no equivale a un buzón creado.

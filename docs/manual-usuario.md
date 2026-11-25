@@ -1,6 +1,6 @@
 # Manual de usuario APH
 
-Audiencia: técnicos provinciales de atención prehospitalaria y superadministrador nacional. Versión 1.0, 17 de noviembre de 2026. La URL definitiva será comunicada por la institución; el piloto local usa http://127.0.0.1:8090/login. Las imágenes de marca no implican aprobación institucional del sistema.
+Audiencia: técnicos provinciales de atención prehospitalaria y superadministrador nacional. Versión 1.1, 25 de noviembre de 2026. La URL definitiva será comunicada por la institución; el piloto local usa http://127.0.0.1:8090/login. Las imágenes de marca no implican aprobación institucional del sistema.
 
 ## Ingresar y salir
 
@@ -23,7 +23,7 @@ Avatar: JPG, PNG o WebP de hasta 1 MB y 2048 píxeles por lado. El acceso Seguri
 2. Ingrese fecha y datos disponibles. El número visible de referencia es **Hoja de atención**; conserve ceros y letras cuando correspondan. Puede haber números repetidos: compruebe fecha y ficha antes de editar.
 3. Seleccione código APH, evento o causa y cantón en los catálogos. Busque CIE-10 por código o descripción y seleccione el resultado. No escriba un código inventado.
 4. Seleccione el recurso despachado. Si falta, agréguelo primero en Recursos de la misma provincia. El responsable se registra automáticamente desde la cuenta.
-5. Para dirección del evento y localidad de destino, abra el botón de mapa, coloque el pin y confirme. Se toma una dirección de referencia. Verifique que corresponda al lugar; los mapas no son evidencia de precisión ni reemplazan referencias operativas.
+5. Para dirección del evento y localidad de destino, abra el botón de mapa, coloque el pin y confirme. Si ya escribió una dirección, el sistema la conserva y ofrece «Usar dirección sugerida». Se toma una dirección de referencia. Verifique que corresponda al lugar; los mapas no son evidencia de precisión ni reemplazan referencias operativas.
 6. Registre kilometrajes de salida y llegada; la distancia es llegada menos salida. No confundir kilometraje del odómetro con distancia estimada del mapa. Combustibles se seleccionan en desplegables.
 7. Use Guardar para dejar Pendiente, o Cerrar cuando se cumplan los requisitos mostrados. Corregir un campo inválido no sustituye la revisión clínica/operativa del registro.
 
@@ -31,7 +31,7 @@ La fecha es obligatoria al guardar. Al cerrar se requieren fecha, código APH, c
 
 ## Revisar, corregir y eliminar
 
-En Atenciones verá total, cerradas y pendientes. Las tarjetas permiten filtrar; las filas pendientes se resaltan en amarillo suave. El superadministrador dispone de filtro provincial. El técnico solo ve su provincia, aunque conozca el ID de otra ficha.
+En Atenciones verá total, cerradas y pendientes. El listado muestra 30 fichas por página. Las tarjetas permiten filtrar; las filas pendientes se resaltan en amarillo suave. El superadministrador dispone de filtro provincial. El técnico solo ve su provincia, aunque conozca el ID de otra ficha.
 
 - **Editar:** abre la hoja. Volver a atenciones regresa al listado conservando el contexto disponible. Una ficha cerrada requiere motivo de corrección; los cambios quedan en historial.
 - **Conflicto de edición:** si otra persona guardó primero, recargue, revise y concilie. No repita el envío esperando sobrescribir.
@@ -45,6 +45,8 @@ Cada técnico puede corregir y eliminar todas las fichas de su provincia, aunque
 Entre a Recursos. Registre número de unidad, ubicación, capacidad de respuesta, tipo y combustible; guarde y compruebe en la tabla. El número de recurso no puede repetirse dentro de una provincia. Use Editar para actualizar. No existe eliminación de recurso desde la interfaz actual. Los cambios de tipo no deben reinterpretar despachos históricos que ya tienen copia del tipo en la ficha.
 
 ## Dashboard
+
+Por defecto el panel muestra los últimos 12 meses. Cambie las fechas con «Desde» y «Hasta» o elija «Todo el historial»; si hay más de 10.000 atenciones, un aviso indica que los totales no son exactos.
 
 Los gráficos muestran fichas registradas y no eliminadas, incluidas pendientes. Seleccionar una categoría, provincia o pin filtra el resto; seleccionar de nuevo la categoría o quitar su filtro permite ampliar resultados. El color provincial muestra cantidad de fichas, no incidencia por población. Las estadísticas se recalculan sobre los datos cargados: recargue la página para incluir guardados nuevos de otros usuarios.
 
@@ -67,6 +69,8 @@ El código de activación valida el primer acceso/correo, no se pide en cada ses
 
 ## Errores y soporte
 
-A los ocho minutos de inactividad aparece aviso; a los diez vence la sesión. A las ocho horas se requiere nuevo ingreso. No hay autoguardado: guarde avances oportunamente. Si un mapa falla, revise conexión y comunique el mensaje; no cargue capturas con pacientes en canales públicos.
+A los ocho minutos de inactividad aparece aviso; a los diez vence la sesión. A las ocho horas se requiere nuevo ingreso. Si la sesión vence con cambios sin guardar, aparece «Trabajo en pausa»: inicie sesión con el mismo usuario en otra pestaña y pulse Reanudar antes de 30 minutos. Si no hay conexión al guardar, el formulario lo indica y conserva los datos. Guarde avances oportunamente.
+
+Si faltan datos o alguno no es válido, un resumen arriba enlaza a cada campo y el mensaje aparece también junto a él; al corregirlo, el aviso desaparece. Si un mapa falla, revise conexión y comunique el mensaje; no cargue capturas con pacientes en canales públicos.
 
 Al reportar, indique módulo, hora, acción y mensaje, junto con una referencia mínima autorizada. Nunca incluya contraseña, cookies, código de activación ni una ficha clínica completa en GitHub. Canal y responsable de soporte: pendientes de designación institucional; durante el piloto coordinar con el responsable del proyecto.

@@ -22,7 +22,9 @@ La aplicación incorpora validaciones, catálogos, permisos provinciales e histo
 - Filtros por provincia y estado; las filas pendientes se resaltan en amarillo.
 - Edición con retorno contextual al listado, conservando provincia, estado y página.
 - Eliminación lógica mediante confirmación en un modal, conservando la ficha y el historial de quién la eliminó.
-- Historial de cambios y control de versión para detectar modificaciones concurrentes.
+- Historial de cambios con motivos reales (creación, actualización, cierre o corrección) y control de versión para detectar modificaciones concurrentes.
+- Protección contra fichas duplicadas por doble envío.
+- Errores de validación junto a cada campo, con un resumen enlazado y validación al salir del campo.
 
 ### Recursos y operación provincial
 
@@ -39,16 +41,17 @@ La aplicación incorpora validaciones, catálogos, permisos provinciales e histo
 - Validación del correo contra los dominios institucionales autorizados.
 - Reasignación provincial sin trasladar las fichas históricas, y revocación de sesiones ante cambios administrativos.
 - Inicio de sesión con usuario y contraseña, sin doble factor, conforme a la decisión adoptada para el piloto.
-- Protección CSRF, límite de intentos, contraseñas almacenadas mediante hash y comprobación de contraseñas filtradas al establecer nuevas claves.
-- Aviso a los ocho minutos de inactividad, vencimiento a los diez minutos y duración máxima de sesión de ocho horas.
+- Protección CSRF, límite de intentos por cuenta (el usuario debe coincidir exactamente), contraseñas almacenadas mediante hash y comprobación de contraseñas filtradas al establecer nuevas claves.
+- Aviso a los ocho minutos de inactividad, vencimiento a los diez minutos y duración máxima de sesión de ocho horas. Si vence con cambios sin guardar, la ficha queda en pausa en la pestaña y se recupera al volver a ingresar.
 - Cookies HttpOnly y SameSite; uso de Secure y HTTPS exigido en producción.
 - Cierre de sesión disponible en todos los encabezados; acceso a Seguridad desde Mi perfil.
 
-Las nuevas contraseñas requieren de 8 a 72 caracteres ASCII, con mayúscula, minúscula, número y uno de los símbolos permitidos (`. @ _ - ! # $ %`). Las contraseñas existentes no se cambian automáticamente. Esta política **no constituye una certificación ni una declaración de cumplimiento de estándares de seguridad**. Las cuentas migradas mantienen temporalmente acceso sin verificación de correo. Los detalles y límites están en [Roles y activación](aph-laravel/docs/Roles-y-activacion.md) y [Seguridad y privacidad](aph-laravel/docs/Seguridad-y-privacidad.md).
+Las nuevas contraseñas requieren de 8 a 72 caracteres ASCII, con mayúscula, minúscula, número y uno de los símbolos permitidos (`. @ _ - ! # $ %`). Las contraseñas existentes no se cambian automáticamente. Esta política **no constituye una certificación ni una declaración de cumplimiento de estándares de seguridad**. Las cuentas migradas mantienen temporalmente acceso sin verificación de correo. Los detalles y límites están en [Roles y activación](aph-laravel/docs/Roles-y-activacion.md) y [Seguridad y privacidad](docs/seguridad.md).
 
 ### Dashboard y georreferenciación
 
 - Gráficos por evento o causa, sexo, edad, nacionalidad, discapacidad, identificación, tipos de recurso y kilómetros recorridos por fecha.
+- Periodo configurable: últimos 12 meses por defecto, con un máximo de 10.000 atenciones por vista.
 - Filtros cruzados al seleccionar categorías, provincias o puntos de los mapas.
 - Mapas de ubicación del evento y localidad de destino.
 - Mapa coroplético de Ecuador con las 24 provincias, recuadro de Galápagos, escala de colores y cantidades de atenciones.
@@ -92,7 +95,7 @@ Permanecen pendientes la URL pública HTTPS, el servicio institucional de correo
 
 Este repositorio contiene código, migraciones, pruebas, catálogos y recursos de la aplicación. **No incluye contraseñas, claves de configuración, bases de datos operativas, fichas de pacientes, matrices Excel originales, archivos de cuentas ni registros de ejecución.** `.env.example` es una plantilla sin secretos.
 
-Las pruebas utilizan una base independiente denominada `aph_test`. Los ejemplos y datos de demostración del piloto no deben confundirse con información asistencial validada.
+Las pruebas utilizan una base independiente denominada `aph_test` y se detienen antes de usar otra base o una configuración en caché. Los ejemplos y datos de demostración del piloto no deben confundirse con información asistencial validada.
 
 ## Estado de la documentación
 
