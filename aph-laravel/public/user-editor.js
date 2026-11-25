@@ -34,3 +34,32 @@
     dialog.addEventListener('close', () => {dialog.querySelectorAll('[data-error-user-id]').forEach(error => error.remove());form.elements.password.value = '';opener?.focus();});
     if (/^\d+$/.test(form.dataset.reopen)) openEditor(form.dataset.reopen);
 })();
+
+(() => {
+    const dialog = document.querySelector('#deactivate-confirmation');
+    if (!dialog) return;
+    let pending = null;
+    let opener = null;
+    let accepted = false;
+    document.querySelectorAll('form[data-deactivate]').forEach(form => form.addEventListener('submit', event => {
+        if (form.dataset.confirmed === '1') return;
+        // Se detiene aquí para que ningún otro manejador envíe la desactivación sin confirmar.
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        pending = form;
+        opener = event.submitter ?? form.querySelector('button');
+        accepted = false;
+        dialog.querySelector('#deactivate-name').textContent = form.dataset.deactivate;
+        dialog.showModal();
+        dialog.querySelector('[data-cancel-deactivate]').focus();
+    }));
+    dialog.querySelector('[data-cancel-deactivate]').addEventListener('click', () => dialog.close());
+    dialog.querySelector('[data-accept-deactivate]').addEventListener('click', () => {
+        accepted = true;
+        pending.dataset.confirmed = '1';
+        dialog.close();
+        pending.requestSubmit();
+    });
+    dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', () => { if (!accepted) opener?.focus(); });
+})();

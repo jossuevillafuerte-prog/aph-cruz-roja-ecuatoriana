@@ -60,9 +60,9 @@ Desde Atenciones puede descargar cerradas a Excel y ubicaciones GeoJSON. El supe
 
 1. Filtre por usuario/nombre/correo, provincia o estado. Activo indica habilitación; revise también si el correo está pendiente de activación.
 2. Crear técnico solicita nombre, usuario único, correo institucional y provincia. La cuenta nueva queda pendiente; no es accesible hasta completar activación.
-3. Editar datos abre modal con nombre, apellido, correo, contraseña, rol y provincia. Deje contraseña vacía para conservarla. Guardar vuelve al mismo módulo y muestra confirmación; los errores corresponden solo a ese usuario.
+3. Editar datos abre un panel lateral con nombre, apellido, correo, contraseña, rol y provincia. Deje contraseña vacía para conservarla. Guardar vuelve al mismo módulo y muestra confirmación; los errores corresponden solo a ese usuario.
 4. Cambiar provincia/rol no mueve fichas históricas. Verifique que la asignación sea autorizada. Se revocan otras sesiones de la cuenta.
-5. Desactivar impide ingreso y revoca acceso. No puede desactivar su propia cuenta nacional. No hay eliminación física de usuarios en el panel.
+5. Desactivar pide confirmación con el nombre de la cuenta; impide el ingreso y revoca el acceso. No puede desactivar su propia cuenta nacional. No hay eliminación física de usuarios en el panel.
 6. Reenviar activación requiere correo y servicio habilitado. Mientras SMTP/URL estén pendientes, verá aviso y no se envía código. Cuando esté habilitado, la invitación vence en diez minutos; reenviar invalida la anterior.
 
 El código de activación valida el primer acceso/correo, no se pide en cada sesión. La cuenta suspendida no debe reactivarse a través de una invitación. No cambiar correos o roles para evadir verificaciones.

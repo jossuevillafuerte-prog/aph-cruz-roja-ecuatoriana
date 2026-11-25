@@ -271,9 +271,10 @@ summary .brand-icon, summary .icon { display: inline-block; vertical-align: midd
 @media(max-width:650px){.province-map-grid { grid-template-columns:minmax(0,1fr); } #ecuador-map {height:400px;} #galapagos-map {height:180px;} }
 
 .module-page > .back-link, .module-page > .card > .back-link { margin-bottom: 1rem; }
-.editor-dialog { width:min(720px,calc(100vw - 2rem)); max-height:calc(100dvh - 2rem); overflow:auto; border:0; border-radius:16px; padding:1.5rem; box-shadow:0 20px 70px #0005; }
+/* Panel lateral: la lista sigue visible detrás mientras se edita. */
+.editor-dialog { margin:0 0 0 auto; width:min(560px,100vw); max-width:100vw; height:100dvh; max-height:none; overflow:auto; border:0; border-left:1px solid var(--cre-platinum); border-radius:0; padding:1.5rem; box-shadow:-8px 0 30px #0002; }
 .editor-dialog::backdrop { background:#15243d88; }
-.editor-dialog .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.editor-dialog .grid { grid-template-columns:minmax(0,1fr); }
 .editor-dialog label { display:grid; gap:.4rem; min-width:0; }
 .editor-dialog .actions { margin-top:1rem; }
 .province-counts button[aria-pressed="true"] { color:#fff; background:#b91c1c; border-color:#991b1b; box-shadow:0 4px 12px #991b1b35; }

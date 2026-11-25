@@ -89,4 +89,20 @@ class FormFeedbackTest extends TestCase
         $this->assertMatchesRegularExpression('/id="code"[^>]*value="12"[^>]*aria-invalid="true" aria-describedby="code-error"/', $html);
         $this->assertStringContainsString('<label for="password">Nueva contraseña</label>', $html);
     }
+
+    public function test_user_filters_are_labelled_and_deactivation_asks_for_confirmation(): void
+    {
+        DB::table('accounts')->insert(['username' => 'inactivo', 'name' => 'Cuenta Inactiva', 'province' => 'azuay', 'password' => 'x', 'active' => false]);
+        $this->signIn('admin');
+        $html = $this->get('/users')->assertOk()->getContent();
+        foreach (['q' => 'Buscar usuario, nombre o correo', 'province' => 'Provincia', 'state' => 'Estado'] as $field => $label) {
+            $this->assertStringContainsString('<label for="filter-'.$field.'">'.$label.'</label>', $html);
+            $this->assertStringContainsString('id="filter-'.$field.'"', $html);
+        }
+        $this->assertStringContainsString('data-deactivate="Técnico (azuay)"', $html);
+        $this->assertStringNotContainsString('data-deactivate="Admin', $html);
+        $this->assertStringNotContainsString('data-deactivate="Cuenta Inactiva', $html);
+        $this->assertStringContainsString('<dialog id="deactivate-confirmation"', $html);
+        $this->assertStringContainsString('>Desactivar cuenta</button>', $html);
+    }
 }

@@ -16,6 +16,7 @@ Requiere ejecutar `php artisan migrate` (columnas `atenciones.solicitud` y `aten
 - Auditoría que distingue escrituras, rechazos y lecturas; fichas duplicadas por doble envío.
 - Pruebas que se detienen antes de usar una base distinta de `aph_test`.
 - Buscador CIE-10, creación y exportación para el superadministrador.
+- Usuarios nacionales: etiquetas en los filtros, confirmación al desactivar una cuenta y editor como panel lateral.
 - Formularios: errores junto a cada campo, resumen enlazado y enfocable, validación al salir del campo, usuario conservado en el login y mensajes de validación en español.
 - Plantilla `.env.example`: `APP_LOCALE=es`, `LOG_STACK=daily` y `LOG_LEVEL=warning`.
 - Migración de cuentas reintentable y reversiones que no borran datos.
