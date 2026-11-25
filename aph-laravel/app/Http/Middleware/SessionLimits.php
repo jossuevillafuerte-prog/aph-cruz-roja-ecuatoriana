@@ -11,7 +11,11 @@ class SessionLimits
     public function handle($request, Closure $next)
     {
         if (! Auth::check()) {
-            return $request->expectsJson() ? response()->json(['message' => 'Inicia sesión.'], 401) : redirect('/login');
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Inicia sesión.'], 401);
+            }
+
+            return $request->isMethodSafe() ? redirect('/login') : redirect('/login')->with('notice', Security::UNSAVED_NOTICE);
         }
         $s = $request->session();
         $now = time();

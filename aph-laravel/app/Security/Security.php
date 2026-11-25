@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class Security
 {
+    public const UNSAVED_NOTICE = 'La sesión terminó y los cambios enviados no se guardaron. Vuelve a ingresar.';
+
     public static function stamp($user): string
     {
         return hash('sha256', $user->clave.':'.$user->revision);
@@ -24,6 +26,11 @@ class Security
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return $request->expectsJson() ? response()->json(['message' => 'La sesión terminó.'], 401) : redirect('/login')->with('notice', 'La sesión terminó. Vuelve a ingresar.');
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'La sesión terminó.'], 401);
+        }
+        $changesWereLost = ! $request->isMethodSafe() && in_array($reason, ['credential_revoked', 'absolute_timeout', 'idle_timeout'], true);
+
+        return redirect('/login')->with('notice', $changesWereLost ? self::UNSAVED_NOTICE : 'La sesión terminó. Vuelve a ingresar.');
     }
 }

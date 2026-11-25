@@ -20,25 +20,25 @@ class AccountInvitations
         $account = DB::table('accounts')->find($id);
         abort_unless($account, 404);
         if (! config('institution.invitations_enabled')) {
-            return back()->with('notice', 'Envío pendiente: falta configurar el servicio institucional de correo y la URL pública. No se envió ningún código.');
+            return redirect()->route('users.index')->with('notice', 'Envío pendiente: falta configurar el servicio institucional de correo y la URL pública. No se envió ningún código.');
         }
         if ($account->disabled_at) {
-            return back()->withErrors(['email' => 'La cuenta está suspendida. No se enviará una activación.']);
+            return redirect()->route('users.index')->withErrors(['email' => 'La cuenta está suspendida. No se enviará una activación.']);
         }
         if (! $account->email) {
-            return back()->withErrors(['email' => 'Completa el correo institucional antes de enviar.']);
+            return redirect()->route('users.index')->withErrors(['email' => 'Completa el correo institucional antes de enviar.']);
         }
         if ($account->email_verified_at) {
-            return back()->withErrors(['email' => 'El correo ya está verificado. No necesita activación.']);
+            return redirect()->route('users.index')->withErrors(['email' => 'El correo ya está verificado. No necesita activación.']);
         }
         $validator = validator(['email' => $account->email], ['email' => [new InstitutionalEmail]]);
         if ($validator->fails()) {
-            return back()->withErrors($validator);
+            return redirect()->route('users.index')->withErrors($validator);
         }
         $minute = 'invite-minute:'.$id;
         $hour = 'invite-hour:'.$id;
         if (RateLimiter::tooManyAttempts($minute, 1) || RateLimiter::tooManyAttempts($hour, 5)) {
-            return back()->withErrors(['email' => 'Espera antes de reenviar la invitación.']);
+            return redirect()->route('users.index')->withErrors(['email' => 'Espera antes de reenviar la invitación.']);
         }
         RateLimiter::hit($minute, 60);
         RateLimiter::hit($hour, 3600);
@@ -52,10 +52,10 @@ class AccountInvitations
             DB::table('account_invitations')->where('ticket_hash', $ticketHash)->delete();
             Security::event('invitation_failed', null, 'account:'.$id);
 
-            return back()->withErrors(['email' => 'No se pudo enviar. Revisa la configuración de correo e inténtalo nuevamente.']);
+            return redirect()->route('users.index')->withErrors(['email' => 'No se pudo enviar. Revisa la configuración de correo e inténtalo nuevamente.']);
         }
         Security::event('invitation_sent', null, 'account:'.$id);
 
-        return back()->with('notice', 'Invitación enviada. El código anterior dejó de ser válido.');
+        return redirect()->route('users.index')->with('notice', 'Invitación enviada. El código anterior dejó de ser válido.');
     }
 }

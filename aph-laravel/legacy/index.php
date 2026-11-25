@@ -129,7 +129,7 @@ $profileName = $account['nombre'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (! is_string($_POST['_token'] ?? null) || ! hash_equals($_SESSION['token'], $_POST['_token'])) {
         aphStatus(403);
-        aphExit('La sesión del formulario expiró. Vuelve a abrirlo.');
+        aphExit('La sesión del formulario expiró y los cambios no se guardaron. Vuelve a abrirlo.');
     }
     if ($profileView) {
         $profileName = is_string($_POST['nombre'] ?? null) ? trim($_POST['nombre']) : '';
@@ -270,7 +270,7 @@ if ($isAdmin) {
     <title>Registro APH · <?= h($territory['nombre']) ?></title>
     <link rel="stylesheet" href="estilos.css">
     <script src="catalogo.js" defer></script>
-    <meta name="csrf-token" content="<?= h(csrf_token()) ?>"><script src="/session-security.js" defer></script>
+    <meta name="csrf-token" content="<?= h(csrf_token()) ?>"><meta name="session-user" content="<?= h((string) $user->id) ?>"><script src="/session-security.js" defer></script>
     <?php if ($printView) { ?><link rel="stylesheet" href="impresion.css"><script src="impresion.js" defer></script><?php } ?>
     <?php if ($dashboardView || ($editing && ! $deleteView && ! $printView)) { ?>
         <link rel="stylesheet" href="leaflet/leaflet.css">

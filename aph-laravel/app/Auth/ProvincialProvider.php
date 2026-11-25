@@ -24,9 +24,14 @@ class ProvincialProvider implements UserProvider
 
     public function retrieveByCredentials(array $credentials)
     {
-        $id = DB::table('accounts')->where('username', $credentials['usuario'] ?? '')->value('id');
+        $username = (string) ($credentials['usuario'] ?? '');
+        $account = DB::table('accounts')->where('username', $username)->first(['id', 'username']);
+        // La intercalación de MySQL ignora tildes: solo el usuario exacto debe identificar la cuenta.
+        if (! $account || mb_strtolower($account->username) !== mb_strtolower($username)) {
+            return null;
+        }
 
-        return $id ? $this->retrieveById($id) : null;
+        return $this->retrieveById($account->id);
     }
 
     public function validateCredentials(Authenticatable $user, array $credentials)

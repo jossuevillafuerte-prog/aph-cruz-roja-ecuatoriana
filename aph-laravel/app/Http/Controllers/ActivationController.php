@@ -19,7 +19,7 @@ class ActivationController extends Controller
 
     public function activate(Request $r, string $ticket)
     {
-        $r->validate(['code' => 'required|digits:6', 'password' => 'required|string|confirmed|max:72']);
+        $this->validateOrRedirect($r, '/activate/'.$ticket, ['code' => 'required|digits:6', 'password' => 'required|string|confirmed|max:72']);
         $valid = DB::transaction(function () use ($r, $ticket) {
             $row = DB::table('account_invitations')->where('ticket_hash', hash('sha256', $ticket))->lockForUpdate()->first();
             if (! $row || $row->attempts >= 5 || now()->greaterThan($row->expires_at)) {
@@ -33,10 +33,10 @@ class ActivationController extends Controller
             return $row->account_id;
         });
         if (! $valid) {
-            return back()->withErrors(['code' => 'Código inválido, vencido o con demasiados intentos. Solicita una nueva invitación.']);
+            return redirect('/activate/'.$ticket)->withErrors(['code' => 'Código inválido, vencido o con demasiados intentos. Solicita una nueva invitación.']);
         }
         if ($error = PasswordPolicy::error($r->input('password'))) {
-            return back()->withErrors(['password' => $error]);
+            return redirect('/activate/'.$ticket)->withErrors(['password' => $error]);
         }
         $done = DB::transaction(function () use ($valid, $ticket, $r) {
             $invite = DB::table('account_invitations')->where('account_id', $valid)->where('ticket_hash', hash('sha256', $ticket))->lockForUpdate()->first();
@@ -58,7 +58,7 @@ class ActivationController extends Controller
             return true;
         });
         if (! $done) {
-            return back()->withErrors(['code' => 'La invitación dejó de ser válida.']);
+            return redirect('/activate/'.$ticket)->withErrors(['code' => 'La invitación dejó de ser válida.']);
         }
         Security::event('account_activated', (string) $valid);
 

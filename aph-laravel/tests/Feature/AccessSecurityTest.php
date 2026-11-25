@@ -283,6 +283,115 @@ class AccessSecurityTest extends TestCase
         }$this->post('/login', ['usuario' => 'azuay', 'password' => 'wrong'])->assertStatus(429);
     }
 
+    public function test_form_errors_return_to_their_page_with_origin_only_referer(): void
+    {
+        $this->withHeader('Referer', 'http://localhost/');
+        $this->post('/login', ['usuario' => 'azuay', 'password' => 'wrong'])->assertRedirect(route('login'));
+        $this->get('/login')->assertSee('Los datos de acceso no son correctos.');
+        $this->post('/login', [])->assertRedirect(route('login'))->assertSessionHasErrors(['usuario', 'password']);
+        $activation = '/activate/'.str_repeat('a', 64);
+        $this->post($activation, [])->assertRedirect($activation)->assertSessionHasErrors('code');
+        $this->post($activation, ['code' => '123456', 'password' => 'Prueba@7', 'password_confirmation' => 'Prueba@7'])->assertRedirect($activation)->assertSessionHasErrors('code');
+        $this->signed()->post('/security/revoke', ['password' => 'wrong'])->assertRedirect('/security')->assertSessionHasErrors('password');
+        $this->signed(true)->post('/users', ['username' => 'nuevo'])->assertRedirect('/users')->assertSessionHasErrors('email');
+        $this->post('/users/'.$this->tech.'/invite')->assertRedirect(route('users.index'))->assertSessionHas('notice');
+        $this->post('/scope', ['province' => 'invalid'])->assertRedirect('/national')->assertSessionHasErrors('province');
+    }
+
+    public function test_expired_session_reports_unsaved_changes(): void
+    {
+        $this->post('/?vista=nueva')->assertRedirect('/login')->assertSessionHas('notice', Security::UNSAVED_NOTICE);
+        $this->signed(false, ['last_activity' => time() - 600])->post('/?vista=nueva')->assertRedirect('/login')->assertSessionHas('notice', Security::UNSAVED_NOTICE);
+        $this->signed(false, ['last_activity' => time() - 600])->get('/')->assertRedirect('/login')->assertSessionHas('notice', 'La sesión terminó. Vuelve a ingresar.');
+        $this->signed()->post('/logout')->assertRedirect('/login')->assertSessionHas('notice', 'La sesión terminó. Vuelve a ingresar.');
+    }
+
+    public function test_session_status_identifies_user_and_current_token(): void
+    {
+        $this->signed()->getJson('/session/status')->assertOk()->assertJsonPath('user', (string) $this->tech)->assertJsonPath('csrf_token', csrf_token());
+        $this->get('/security')->assertSee('<meta name="session-user" content="'.$this->tech.'">', false);
+        $this->get('/?vista=recursos')->assertSee('<meta name="session-user" content="'.$this->tech.'">', false);
+    }
+
+    public function test_login_limit_cannot_be_bypassed_with_accented_usernames(): void
+    {
+        foreach (['azuáy', 'ázuay', 'àzuay'] as $variant) {
+            $this->assertNull(Auth::getProvider()->retrieveByCredentials(['usuario' => $variant]));
+            $this->post('/login', ['usuario' => $variant, 'password' => 'Prueba@7'])->assertSessionHasErrors('login');
+            $this->assertGuest();
+        }
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->post('/login', ['usuario' => 'azuay', 'password' => 'wrong'])->assertStatus(302);
+        }
+        $this->post('/login', ['usuario' => 'AZUAY', 'password' => 'Prueba@7'])->assertStatus(429);
+        $this->assertGuest();
+        $this->assertSame(5, DB::table('security_events')->where('event', 'login_failed')->where('target', 'account:'.$this->tech)->count());
+        $this->assertSame(1, DB::table('security_events')->where('event', 'login_throttled')->where('target', 'account:'.$this->tech)->count());
+    }
+
+    public function test_only_superadmin_cannot_lose_access_by_changing_email(): void
+    {
+        config(['institution.invitations_enabled' => true]);
+        DB::table('accounts')->where('id', $this->admin)->update(['legacy_access' => false, 'email_verified_at' => now()]);
+        $input = ['action' => 'edit', 'first_name' => 'Cuenta', 'email' => 'nuevo@cruzroja.org.ec', 'password' => '', 'role' => 'superadmin'];
+        $this->signed(true)->put('/users/'.$this->admin, $input)->assertRedirect(route('users.index'))->assertSessionHasErrors('email');
+        $this->assertDatabaseHas('accounts', ['id' => $this->admin, 'email' => 'manejoinformacion@cruzroja.org.ec', 'active' => 1]);
+
+        DB::table('accounts')->where('id', $this->tech)->update(['role' => 'superadmin', 'province' => null, 'operator_id' => null]);
+        $this->put('/users/'.$this->admin, $input)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('accounts', ['id' => $this->admin, 'email' => 'nuevo@cruzroja.org.ec', 'active' => 0]);
+    }
+
+    public function test_verified_email_cannot_change_while_invitations_are_disabled(): void
+    {
+        config(['institution.invitations_enabled' => false]);
+        DB::table('accounts')->where('id', $this->tech)->update(['legacy_access' => false, 'email' => 'a@azuay.cruzroja.org.ec', 'email_verified_at' => now()]);
+        $input = ['action' => 'edit', 'first_name' => 'Ana', 'email' => 'b@azuay.cruzroja.org.ec', 'password' => '', 'role' => 'technician', 'province' => 'azuay'];
+        $this->signed(true)->put('/users/'.$this->tech, $input)->assertSessionHasErrors('email');
+        $this->assertDatabaseHas('accounts', ['id' => $this->tech, 'email' => 'a@azuay.cruzroja.org.ec', 'active' => 1]);
+
+        config(['institution.invitations_enabled' => true]);
+        $this->put('/users/'.$this->tech, $input)->assertSessionHasNoErrors()->assertSessionHas('notice', fn (string $notice): bool => str_contains($notice, 'inactiva hasta verificar'));
+        $this->assertDatabaseHas('accounts', ['id' => $this->tech, 'email' => 'b@azuay.cruzroja.org.ec', 'active' => 0]);
+    }
+
+    public function test_last_usable_superadmin_cannot_be_disabled_or_demoted(): void
+    {
+        $other = DB::table('accounts')->insertGetId(['username' => 'otro.nacional', 'name' => 'Otro', 'email' => 'otro@cruzroja.org.ec', 'role' => 'superadmin', 'password' => 'x', 'active' => true, 'legacy_access' => true]);
+        $this->signed(true);
+        DB::table('accounts')->where('id', $this->admin)->update(['role' => 'technician']);
+        $actor = Auth::user();
+        $actor->role = 'superadmin';
+        $this->actingAs($actor)->post('/users/'.$other, ['action' => 'state', 'active' => '0'])->assertSessionHasErrors('active');
+        $this->put('/users/'.$other, ['action' => 'edit', 'first_name' => 'Otro', 'email' => 'otro@cruzroja.org.ec', 'password' => '', 'role' => 'technician', 'province' => 'azuay'])->assertSessionHasErrors('role');
+        $this->assertDatabaseHas('accounts', ['id' => $other, 'role' => 'superadmin', 'active' => 1]);
+
+        DB::table('accounts')->where('id', $this->admin)->update(['role' => 'superadmin']);
+        $this->post('/users/'.$other, ['action' => 'state', 'active' => '0'])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('accounts', ['id' => $other, 'active' => 0]);
+    }
+
+    public function test_suspended_unverified_account_can_return_to_pending(): void
+    {
+        DB::table('accounts')->where('id', $this->tech)->update(['legacy_access' => false, 'email' => 'a@azuay.cruzroja.org.ec', 'active' => false, 'disabled_at' => now()]);
+        $this->signed(true)->post('/users/'.$this->tech, ['action' => 'state', 'active' => '1'])->assertSessionHasNoErrors()->assertSessionHas('notice');
+        $this->assertDatabaseHas('accounts', ['id' => $this->tech, 'active' => 0, 'disabled_at' => null]);
+        $this->assertNull(Auth::getProvider()->retrieveById((string) $this->tech));
+        $this->post('/users/'.$this->tech, ['action' => 'state', 'active' => '1'])->assertSessionHasErrors('active');
+    }
+
+    public function test_new_technician_requires_an_explicit_province_and_keeps_it_after_errors(): void
+    {
+        $this->signed(true)->get('/users')->assertSee('<option value="">Selecciona una provincia</option>', false);
+        $input = ['username' => 'nuevo', 'name' => 'Nuevo', 'email' => 'manejoinformacion@cruzroja.org.ec', 'province' => 'loja'];
+        $this->post('/users', array_replace($input, ['province' => '']))->assertSessionHasErrors('province');
+        $this->post('/users', $input)->assertRedirect('/users');
+        $html = $this->get('/users')->assertOk()->assertSee('class="errors"', false)->getContent();
+        $this->assertMatchesRegularExpression('/<details class="card"\s+open/', $html);
+        $this->assertMatchesRegularExpression('/<option value="loja"\s+selected/', $html);
+        $this->assertDatabaseMissing('accounts', ['username' => 'nuevo']);
+    }
+
     public function test_password_rules_and_leak_filter(): void
     {
         Http::fake(['*' => Http::response(str_repeat('A', 35).':0', 200)]);

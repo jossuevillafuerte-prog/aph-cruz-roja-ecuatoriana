@@ -61,7 +61,7 @@ El ID de una ficha no concede acceso por sí mismo. Las consultas combinan ID y 
 
 ## Contratos internos útiles
 
-- GET /session/status devuelve idle_until, absolute_until y server_time (Unix); no renueva actividad. POST /session/activity sí la renueva bajo sesión válida.
+- GET /session/status devuelve idle_until, absolute_until y server_time (Unix), además de user y csrf_token para reanudar un formulario bloqueado; no renueva actividad. POST /session/activity sí la renueva bajo sesión válida.
 - POST /scope recibe province y next opcional (nueva, recursos, atenciones); guarda ámbito de operación nacional.
 - PUT/PATCH /users/{id} recibe action=edit, edit_user_id, first_name, last_name, email, password opcional, role y province. POST también se admite para compatibilidad y cambios action=state, active=0/1.
 - Activación recibe code de seis dígitos, password y password_confirmation. El editor administrativo no exige confirmed porque no tiene campo de confirmación.

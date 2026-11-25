@@ -10,7 +10,7 @@ Revisión técnica documental: 17 de noviembre de 2026. Sustituye las referencia
 | Contraseña nueva | 8–72 caracteres ASCII; mayúscula, minúscula, número y símbolo de `. @ _ - ! # $ %`; sin espacios, tildes ni ñ. La política no se aplica retroactivamente a hashes importados. |
 | Hash | Hash::make o password_hash bcrypt en adaptador. Máximo 72 evita truncamiento bcrypt. El provider no rehashea automáticamente al login. |
 | Contraseñas filtradas | Prefijo SHA-1 de cinco caracteres a Pwned Passwords; cotejo local de sufijo. Rechazo ante filtración o indisponibilidad; no se envía contraseña completa. |
-| Intentos | Cinco fallos por usuario y 50 por IP en cinco minutos. Mensaje de login genérico. |
+| Intentos | Cinco fallos por usuario y 50 por IP en cinco minutos. El usuario debe coincidir exactamente, también en tildes. Mensaje de login genérico. |
 | Sesión | MySQL, payload cifrado, ID rotado al autenticar; credencial derivada de hash/revisión. |
 | Tiempo | Aviso a ocho minutos, expiración a diez de inactividad y ocho horas absolutas. No hay autoguardado. |
 | Cookies | HttpOnly, SameSite Strict, Secure en producción, sin contraseña almacenada. HTTP local tiene excepción explícita. |
@@ -18,7 +18,7 @@ Revisión técnica documental: 17 de noviembre de 2026. Sustituye las referencia
 | Autorización | Middleware nacional y consultas limitadas por provincia; edición/eliminación de cualquier ficha del ámbito, con auditoría. |
 | Cabeceras | no-store, nosniff, X-Frame-Options DENY, strict-origin, HSTS bajo HTTPS y Permissions-Policy. No CSP propia entregada. |
 | Entrada y salida | Validación de campos/catálogos, consultas parametrizadas y escape HTML en vistas. |
-| Edición de cuentas | Correo único, dominios exactos, hash solo si nueva clave, revocación de sesiones/invitaciones, no suspenderse a sí mismo. |
+| Edición de cuentas | Correo único, dominios exactos, hash solo si nueva clave, revocación de sesiones/invitaciones, no suspenderse a sí mismo ni dejar el sistema sin un superadministrador con acceso; un correo verificado no cambia con las invitaciones deshabilitadas. |
 | Auditoría | cambios para fichas; security_events para acceso, salidas y administración. No almacén inmutable independiente. |
 
 Email institucional valida pertenencia a una lista, no existencia del buzón ni concordancia obligatoria con la provincia asignada. Las invitaciones prueban control del correo al activarse; no constituyen un segundo factor en cada login. legacy_access permite acceso temporal sin verificación y no tiene interruptor abierto en la interfaz.

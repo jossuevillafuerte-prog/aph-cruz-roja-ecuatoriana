@@ -45,7 +45,7 @@ class UsersController extends Controller
     public function store(Request $r)
     {
         $r->merge(['username' => strtolower(trim((string) $r->input('username'))), 'email' => strtolower(trim((string) $r->input('email')))]);
-        $v = $r->validate(['username' => ['required', 'regex:/\A[a-z0-9][a-z0-9._-]{2,39}\z/', 'unique:accounts,username'], 'name' => 'required|string|max:200', 'email' => ['required', 'max:254', new InstitutionalEmail, 'unique:accounts,email'], 'province' => ['required', Rule::in(array_keys($this->provinces()))]]);
+        $v = $this->validateOrRedirect($r, '/users', ['username' => ['required', 'regex:/\A[a-z0-9][a-z0-9._-]{2,39}\z/', 'unique:accounts,username'], 'name' => 'required|string|max:200', 'email' => ['required', 'max:254', new InstitutionalEmail, 'unique:accounts,email'], 'province' => ['required', Rule::in(array_keys($this->provinces()))]]);
         $id = DB::transaction(function () use ($v) {
             $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
             $operator = DB::table('operadores')->insertGetId(['provincia' => $v['province'], 'usuario' => $v['username'], 'nombre' => $v['name'], 'perfil' => 'Técnico provincial APH', 'clave' => $hash, 'activo' => 0, 'revision' => 0]);
@@ -79,9 +79,20 @@ class UsersController extends Controller
             $v = $r->validate(['active' => 'required|boolean']);
             abort_if((string) $id === (string) $r->user()->id, 422, 'No puedes desactivar tu propia cuenta.');
             if ($v['active'] && ! $account->legacy_access && ! $account->email_verified_at) {
+                if ($account->disabled_at) {
+                    // Sin suspensión vuelve a estar pendiente; el acceso sigue exigiendo verificar el correo.
+                    DB::table('accounts')->where('id', $id)->update(['disabled_at' => null, 'updated_at' => now()]);
+                    Security::event('account_suspension_lifted', null, 'account:'.$id);
+
+                    return redirect()->route('users.index')->with('notice', 'Se retiró la suspensión. La cuenta sigue inactiva hasta completar su activación por correo.');
+                }
+
                 return redirect()->route('users.index')->withErrors(['active' => 'La cuenta debe completar su activación por correo.']);
             }
             DB::transaction(function () use ($id, $v, $account) {
+                if (! $v['active']) {
+                    $this->ensureAnotherSuperadmin($id, 'active');
+                }
                 DB::table('accounts')->where('id', $id)->update(['active' => $v['active'], 'disabled_at' => $v['active'] ? null : now(), 'revision' => DB::raw('revision+1'), 'updated_at' => now()]);
                 DB::table('sessions')->where('user_id', (string) $id)->delete();
                 DB::table('account_invitations')->where('account_id', $id)->delete();
@@ -118,13 +129,20 @@ class UsersController extends Controller
             } else {
                 unset($v['password']);
             }
-            DB::transaction(function () use ($id, $v) {
+            $awaitingVerification = DB::transaction(function () use ($id, $v) {
+                if ($v['role'] !== 'superadmin') {
+                    $this->ensureAnotherSuperadmin($id, 'role');
+                }
                 $current = DB::table('accounts')->where('id', $id)->lockForUpdate()->first();
                 $emailChanged = ($v['email'] ?? null) !== $current->email;
                 $identityChanged = $v['province'] !== $current->province || $v['role'] !== $current->role;
                 if ($emailChanged) {
                     $v['email_verified_at'] = null;
                     if (! $current->legacy_access) {
+                        if ($current->email_verified_at && ! config('institution.invitations_enabled')) {
+                            throw ValidationException::withMessages(['email' => 'No se puede cambiar el correo mientras el envío de invitaciones esté deshabilitado: la cuenta quedaría sin acceso.']);
+                        }
+                        $this->ensureAnotherSuperadmin($id, 'email');
                         $v['active'] = false;
                     }
                 }
@@ -158,6 +176,8 @@ class UsersController extends Controller
                 if (isset($v['password'])) {
                     Security::event('account_password_reset', null, 'account:'.$id);
                 }
+
+                return $current->active && ! $active;
             });
             Security::event('account_updated', null, 'account:'.$id);
         } else {
@@ -174,7 +194,22 @@ class UsersController extends Controller
             $r->session()->put('credential', Security::stamp($fresh));
         }
 
-        return redirect()->route('users.index')->with('notice', 'Usuario actualizado correctamente. Se revocaron las otras sesiones de la cuenta.');
+        return redirect()->route('users.index')->with('notice', ! empty($awaitingVerification)
+            ? 'Usuario actualizado. La cuenta quedó inactiva hasta verificar el nuevo correo: usa «Reenviar activación».'
+            : 'Usuario actualizado correctamente. Se revocaron las otras sesiones de la cuenta.');
+    }
+
+    /**
+     * Impide dejar el sistema sin un superadministrador que pueda ingresar.
+     */
+    private function ensureAnotherSuperadmin(int $id, string $field): void
+    {
+        $superadmins = DB::table('accounts')->where('role', 'superadmin')->where('active', true)
+            ->where(fn ($query) => $query->where('legacy_access', true)->orWhereNotNull('email_verified_at'))
+            ->orderBy('id')->lockForUpdate()->pluck('id')->all();
+        if (in_array($id, $superadmins, true) && count($superadmins) === 1) {
+            throw ValidationException::withMessages([$field => 'Esta es la única cuenta de superadministrador con acceso. Activa otra antes de hacer este cambio.']);
+        }
     }
 
     public function invite(Request $r, int $id)

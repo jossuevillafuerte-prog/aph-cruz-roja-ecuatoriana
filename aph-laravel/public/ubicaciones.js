@@ -5,7 +5,9 @@ for (const picker of document.querySelectorAll('.location-picker')) {
     const open = picker.querySelector('.map-open');
     const cancel = picker.querySelector('.map-cancel');
     const field = document.getElementById(picker.dataset.field);
-    const token = picker.closest('form').querySelector('input[name="_token"]').value;
+    const form = picker.closest('form');
+    const token = form.querySelector('input[name="_token"]').value;
+    const province = form.querySelector('input[name="_province"]')?.value ?? '';
     const status = picker.querySelector('.location-status');
     const mapStatus = picker.querySelector('.map-status');
     const confirm = picker.querySelector('.map-confirm');
@@ -15,6 +17,24 @@ for (const picker of document.querySelectorAll('.location-picker')) {
     let marker;
     let draft;
     let searching = false;
+    let suggestion = '';
+    let automaticText = '';
+    const useSuggestion = document.createElement('button');
+    useSuggestion.type = 'button';
+    useSuggestion.className = 'map-use-address';
+    useSuggestion.textContent = 'Usar dirección sugerida';
+    useSuggestion.hidden = true;
+    status.after(useSuggestion);
+
+    function canReplaceText() {
+        const text = field.value.trim();
+        return text === '' || text === automaticText || /^Punto de referencia \(-?[\d.]+, -?[\d.]+\)$/.test(text);
+    }
+
+    function offerSuggestion(address) {
+        suggestion = address;
+        useSuggestion.hidden = address === '';
+    }
 
     function savedPoint() {
         return latitude.value !== '' && longitude.value !== ''
@@ -74,27 +94,43 @@ for (const picker of document.querySelectorAll('.location-picker')) {
         const lat = draft.lat.toFixed(6);
         const lon = draft.lng.toFixed(6);
         let address = '';
+        let problem = 'Sin dirección disponible.';
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5500);
         try {
             const response = await fetch('?vista=direccion', {
                 method: 'POST',
-                body: new URLSearchParams({_token: token, lat, lon}),
+                headers: {Accept: 'application/json'},
+                body: new URLSearchParams({_token: token, _province: province, lat, lon}),
                 signal: controller.signal,
             });
-            if (response.ok) {
+            if (response.redirected || response.status === 401 || response.status === 419) {
+                problem = 'No se pudo consultar la dirección: revisa tu sesión antes de guardar.';
+            } else if (!response.ok) {
+                problem = 'El servicio de direcciones no respondió.';
+            } else {
                 const result = await response.json();
-                address = result.direccion || '';
+                address = typeof result.direccion === 'string' ? result.direccion.trim() : '';
             }
-        } catch {
+        } catch (error) {
             // The coordinates can still be saved when lookup is unavailable.
+            problem = error.name === 'AbortError' ? 'La búsqueda de la dirección tardó demasiado.' : 'No se pudo consultar la dirección.';
         } finally {
             clearTimeout(timeout);
         }
         latitude.value = lat;
         longitude.value = lon;
-        field.value = address || `Punto de referencia (${lat}, ${lon})`;
-        status.textContent = address ? 'Dirección aproximada completada' : 'Punto marcado. Sin dirección disponible.';
+        offerSuggestion('');
+        if (canReplaceText()) {
+            automaticText = address || `Punto de referencia (${lat}, ${lon})`;
+            field.value = automaticText;
+            status.textContent = address ? 'Dirección aproximada completada' : `Punto marcado. ${problem}`;
+        } else if (address && address !== field.value.trim()) {
+            offerSuggestion(address);
+            status.textContent = `Punto marcado. Se conservó el texto escrito. Dirección sugerida: ${address}`;
+        } else {
+            status.textContent = address ? 'Punto marcado. La dirección coincide.' : `Punto marcado. Se conservó el texto escrito. ${problem}`;
+        }
         clear.hidden = false;
         searching = false;
         confirm.disabled = useCenter.disabled = cancel.disabled = false;
@@ -103,8 +139,17 @@ for (const picker of document.querySelectorAll('.location-picker')) {
         dialog.close();
         open.focus();
     });
+    useSuggestion.addEventListener('click', () => {
+        if (suggestion === '') return;
+        automaticText = suggestion;
+        field.value = suggestion;
+        offerSuggestion('');
+        status.textContent = 'Dirección sugerida aplicada';
+        field.focus();
+    });
     clear.addEventListener('click', () => {
         latitude.value = longitude.value = '';
+        offerSuggestion('');
         if (map) setDraft(null);
         status.textContent = 'Sin punto marcado';
         clear.hidden = true;
