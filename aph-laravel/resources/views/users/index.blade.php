@@ -40,5 +40,5 @@ require_once base_path('legacy/ui.php');
 <h2 id="deactivate-title">Desactivar cuenta</h2><p>¿Desactivar la cuenta de <strong id="deactivate-name"></strong>?</p>
 <p id="deactivate-effect">No podrá ingresar y se cerrarán sus sesiones abiertas. Un superadministrador puede volver a activarla.</p>
 <div class="actions"><button type="button" class="button emphasis" data-cancel-deactivate>{!! icon('close') !!} Cancelar</button><button type="button" class="danger emphasis" data-accept-deactivate>Desactivar cuenta</button></div>
-</dialog><script src="/user-editor.js" defer></script>
+</dialog><script src="{{ \App\Support\Asset::url('/user-editor.js') }}" defer></script>
 @endsection

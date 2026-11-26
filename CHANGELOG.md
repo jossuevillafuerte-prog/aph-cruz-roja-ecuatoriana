@@ -28,6 +28,7 @@ Requiere ejecutar `php artisan migrate` (columnas `atenciones.solicitud` y `aten
 - Migración de cuentas reintentable y reversiones que no borran datos.
 - Abrir una ficha con datos incompletos ya no produce un error 500.
 - Marcar, quitar o aplicar una ubicación del mapa ahora guarda el borrador y activa el aviso de cambios sin guardar.
+- Scripts y estilos con versión según la fecha del archivo (`?v=`): tras un despliegue el navegador descarga lo nuevo aunque el hosting guarde caché 7 días.
 
 ## [Sin publicar como versión] — 2026-11-17
 

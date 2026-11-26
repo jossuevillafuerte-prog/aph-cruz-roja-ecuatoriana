@@ -8,4 +8,4 @@
         <div class="actions"><button type="button" id="delete-cancel" class="button emphasis"><?= icon('close') ?> Cancelar</button><button type="submit" class="danger emphasis"><?= icon('delete') ?> Confirmar eliminación</button></div>
     </form>
 </dialog>
-<script src="/delete-dialog.js" defer></script>
+<script src="<?= htmlspecialchars(\App\Support\Asset::url('/delete-dialog.js'), ENT_QUOTES) ?>" defer></script>

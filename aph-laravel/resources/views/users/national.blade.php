@@ -11,7 +11,7 @@ $db=database();$territory=['nombre'=>$province ? $provinces[$province]['nombre']
 ob_start();require base_path('legacy/dashboard-vista.php');$dashboard=ob_get_clean();
 @endphp
 {!! $dashboard !!}
-<link rel="stylesheet" href="/leaflet/leaflet.css"><script src="/leaflet/leaflet.js" defer></script><script src="/dashboard-mapas.js" defer></script>
+<link rel="stylesheet" href="{{ \App\Support\Asset::url('/leaflet/leaflet.css') }}"><script src="{{ \App\Support\Asset::url('/leaflet/leaflet.js') }}" defer></script><script src="{{ \App\Support\Asset::url('/dashboard-mapas.js') }}" defer></script>
 @else
 @php($provinceQuery=$province ? '&'.http_build_query(['province'=>$province]) : '')
 <div class="actions"><a class="button primary emphasis" href="/?vista=nueva{{ $provinceQuery ?: '&select_province=1' }}">{!! icon('add') !!} Nueva atención</a>

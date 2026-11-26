@@ -2,6 +2,7 @@
 declare(strict_types=1);
 use App\Security\Security;
 use App\Services\AttentionDrafts;
+use App\Support\Asset;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -280,18 +281,18 @@ if ($isAdmin) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Registro APH · <?= h($territory['nombre']) ?></title>
-    <link rel="stylesheet" href="estilos.css">
-    <script src="catalogo.js" defer></script><script src="/form-feedback.js" defer></script><script src="/attention-draft.js" defer></script>
-    <meta name="csrf-token" content="<?= h(csrf_token()) ?>"><meta name="session-user" content="<?= h((string) $user->id) ?>"><script src="/session-security.js" defer></script>
-    <?php if ($printView) { ?><link rel="stylesheet" href="impresion.css"><script src="impresion.js" defer></script><?php } ?>
+    <link rel="stylesheet" href="<?= h(Asset::url('estilos.css')) ?>">
+    <script src="<?= h(Asset::url('catalogo.js')) ?>" defer></script><script src="<?= h(Asset::url('/form-feedback.js')) ?>" defer></script><script src="<?= h(Asset::url('/attention-draft.js')) ?>" defer></script>
+    <meta name="csrf-token" content="<?= h(csrf_token()) ?>"><meta name="session-user" content="<?= h((string) $user->id) ?>"><script src="<?= h(Asset::url('/session-security.js')) ?>" defer></script>
+    <?php if ($printView) { ?><link rel="stylesheet" href="<?= h(Asset::url('impresion.css')) ?>"><script src="<?= h(Asset::url('impresion.js')) ?>" defer></script><?php } ?>
     <?php if ($dashboardView || ($editing && ! $deleteView && ! $printView)) { ?>
-        <link rel="stylesheet" href="leaflet/leaflet.css">
-        <script src="leaflet/leaflet.js" defer></script>
+        <link rel="stylesheet" href="<?= h(Asset::url('leaflet/leaflet.css')) ?>">
+        <script src="<?= h(Asset::url('leaflet/leaflet.js')) ?>" defer></script>
     <?php } ?>
     <?php if ($dashboardView) { ?>
-        <script src="dashboard-mapas.js" defer></script>
+        <script src="<?= h(Asset::url('dashboard-mapas.js')) ?>" defer></script>
     <?php } elseif ($editing && ! $deleteView && ! $printView) { ?>
-        <script src="ubicaciones.js" defer></script>
+        <script src="<?= h(Asset::url('ubicaciones.js')) ?>" defer></script>
     <?php } ?>
 </head>
 <body>

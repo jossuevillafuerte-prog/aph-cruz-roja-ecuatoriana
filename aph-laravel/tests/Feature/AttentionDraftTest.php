@@ -108,4 +108,15 @@ class AttentionDraftTest extends TestCase
         $this->assertStringContainsString('value="guardar" data-shortcut-save aria-keyshortcuts="Control+S"', $form);
         $this->assertStringContainsString('<kbd>Ctrl+S</kbd>', $form);
     }
+
+    public function test_scripts_and_styles_carry_a_version_so_deploys_bypass_the_cache(): void
+    {
+        $version = filemtime(public_path('ubicaciones.js'));
+        $this->signIn($this->azuay);
+        $form = $this->get('/?vista=nueva')->getContent();
+        $this->assertStringContainsString('src="/ubicaciones.js?v='.$version.'"', $form);
+        $this->assertStringContainsString('href="/estilos.css?v=', $form);
+        $this->assertStringNotContainsString('src="ubicaciones.js"', $form);
+        $this->assertStringContainsString('href="/estilos.css?v=', $this->get('/security')->getContent());
+    }
 }
