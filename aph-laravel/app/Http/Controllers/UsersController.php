@@ -6,6 +6,7 @@ use App\Rules\InstitutionalEmail;
 use App\Security\PasswordPolicy;
 use App\Security\Security;
 use App\Services\AccountInvitations;
+use App\Services\PendingAccounts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,7 @@ class UsersController extends Controller
             $q->where(fn ($q) => $q->where('username', 'like', '%'.$term.'%')->orWhere('name', 'like', '%'.$term.'%')->orWhere('email', 'like', '%'.$term.'%'));
         }
 
-        return view('users.index', ['users' => $q->orderBy('name')->paginate(30)->withQueryString(), 'provinces' => $this->provinces(), 'totals' => ['active' => DB::table('accounts')->where('active', true)->count(), 'inactive' => DB::table('accounts')->where('active', false)->count()]]);
+        return view('users.index', ['users' => $q->orderBy('name')->paginate(30)->withQueryString(), 'provinces' => $this->provinces(), 'requests' => DB::table('registration_requests')->where('status', 'pending')->orderBy('created_at')->get(), 'totals' => ['active' => DB::table('accounts')->where('active', true)->count(), 'inactive' => DB::table('accounts')->where('active', false)->count()]]);
     }
 
     private function provinces()
@@ -46,12 +47,7 @@ class UsersController extends Controller
     {
         $r->merge(['username' => strtolower(trim((string) $r->input('username'))), 'email' => strtolower(trim((string) $r->input('email')))]);
         $v = $this->validateOrRedirect($r, '/users', ['username' => ['required', 'regex:/\A[a-z0-9][a-z0-9._-]{2,39}\z/', 'unique:accounts,username'], 'name' => 'required|string|max:200', 'email' => ['required', 'max:254', new InstitutionalEmail, 'unique:accounts,email'], 'province' => ['required', Rule::in(array_keys($this->provinces()))]]);
-        $id = DB::transaction(function () use ($v) {
-            $hash = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
-            $operator = DB::table('operadores')->insertGetId(['provincia' => $v['province'], 'usuario' => $v['username'], 'nombre' => $v['name'], 'perfil' => 'Técnico provincial APH', 'clave' => $hash, 'activo' => 0, 'revision' => 0]);
-
-            return DB::table('accounts')->insertGetId($v + ['role' => 'technician', 'operator_id' => $operator, 'password' => $hash, 'active' => false, 'legacy_access' => false, 'created_at' => now(), 'updated_at' => now()]);
-        });
+        $id = PendingAccounts::create($v);
         Security::event('account_created', null, 'account:'.$id);
 
         return redirect('/users')->with('notice', 'Cuenta creada pendiente de activación. El envío de correo se habilitará al configurar el servicio institucional.');

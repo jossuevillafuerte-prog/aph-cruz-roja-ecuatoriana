@@ -40,7 +40,7 @@ Revisar enlaces relativos y diagramas Mermaid en cada cambio. Actualizar fecha y
 
 ## Herramientas
 
-El esquema se documentó con migraciones y metadatos MySQL (19 tablas, 121 campos, 9 FK). Mermaid representa diagramas en GitHub sin instalar una dependencia en la aplicación. MySQL Workbench/DBeaver pueden generar gráficos desde una conexión autorizada; exportar estructura, no registros. Un generador basado solo en Eloquent no cubrirá este proyecto híbrido. MkDocs/Docusaurus son opciones futuras de publicación, no requisitos para leer Markdown.
+El esquema se documentó con migraciones y metadatos MySQL (20 tablas, 132 campos, 10 FK). Mermaid representa diagramas en GitHub sin instalar una dependencia en la aplicación. MySQL Workbench/DBeaver pueden generar gráficos desde una conexión autorizada; exportar estructura, no registros. Un generador basado solo en Eloquent no cubrirá este proyecto híbrido. MkDocs/Docusaurus son opciones futuras de publicación, no requisitos para leer Markdown.
 
 ## Actualizar dependencias
 

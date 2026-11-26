@@ -98,6 +98,7 @@ class NationalAccessAndMigrationsTest extends TestCase
         DB::rollBack();
         DB::table('usuarios')->insert([['provincia' => 'azuay', 'clave' => 'x'], ['provincia' => 'pichincha', 'clave' => 'x']]);
         Schema::drop('drafts');
+        Schema::drop('registration_requests');
         Schema::drop('account_invitations');
         Schema::drop('accounts');
         $migration = require database_path('migrations/2026_11_10_000002_unified_accounts.php');

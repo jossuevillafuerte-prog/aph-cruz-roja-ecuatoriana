@@ -9,6 +9,8 @@ Audiencia: técnicos provinciales de atención prehospitalaria y superadministra
 3. Use el botón Cerrar sesión del encabezado o del menú lateral al terminar, especialmente en equipos compartidos. Cerrar una pestaña no garantiza el cierre inmediato de la sesión.
 4. Tras varios errores, espere cinco minutos. Si olvidó la clave, contacte al superadministrador: no hay recuperación autónoma de contraseña implementada.
 
+Si aún no tiene cuenta, pulse «Solicitar cuenta» en el inicio de sesión y complete nombres, apellidos, provincia, correo institucional (de su provincia o @cruzroja.org.ec) y el usuario que desea. El superadministrador revisa la solicitud; si la aprueba, recibirá en ese correo el enlace y el código para activar la cuenta y crear su contraseña. Si la institución publicó un tablero, el botón «Ver tablero Power BI» lo abre en otra pestaña.
+
 No se pide segundo factor para el login diario. Una cuenta nueva puede requerir activación de correo. Las cuentas migradas tienen excepción temporal autorizada; no se debe asumir que cualquier correo escrito ya esté verificado.
 
 ## Menú y perfil
@@ -65,7 +67,8 @@ Desde Atenciones puede descargar cerradas a Excel y ubicaciones GeoJSON. El supe
 3. Editar datos abre un panel lateral con nombre, apellido, correo, contraseña, rol y provincia. Deje contraseña vacía para conservarla. Guardar vuelve al mismo módulo y muestra confirmación; los errores corresponden solo a ese usuario.
 4. Cambiar provincia/rol no mueve fichas históricas. Verifique que la asignación sea autorizada. Se revocan otras sesiones de la cuenta.
 5. Desactivar pide confirmación con el nombre de la cuenta; impide el ingreso y revoca el acceso. No puede desactivar su propia cuenta nacional. No hay eliminación física de usuarios en el panel.
-6. Reenviar activación requiere correo y servicio habilitado. Mientras SMTP/URL estén pendientes, verá aviso y no se envía código. Cuando esté habilitado, la invitación vence en diez minutos; reenviar invalida la anterior.
+6. Las solicitudes de registro aparecen arriba, en «Solicitudes de registro». Verifique la identidad de la persona antes de pulsar Aprobar: se crea la cuenta como técnico provincial y se envía la activación. Rechazar no crea nada. Si ya existe una cuenta con ese usuario o correo, la solicitud se marca como rechazada.
+7. Reenviar activación requiere correo y servicio habilitado. Mientras SMTP/URL estén pendientes, verá aviso y no se envía código. Cuando esté habilitado, la invitación vence en diez minutos; reenviar invalida la anterior.
 
 El código de activación valida el primer acceso/correo, no se pide en cada sesión. La cuenta suspendida no debe reactivarse a través de una invitación. No cambiar correos o roles para evadir verificaciones.
 

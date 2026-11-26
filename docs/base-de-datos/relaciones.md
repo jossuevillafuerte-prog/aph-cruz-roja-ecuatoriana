@@ -13,6 +13,7 @@ erDiagram
     atenciones ||--o{ cambios : atencion
     accounts ||--o| account_invitations : account_id_unico
     accounts ||--o{ drafts : account_id
+    accounts |o--o{ registration_requests : reviewed_by
     usuarios {
         varchar provincia PK
     }
@@ -53,6 +54,13 @@ erDiagram
         bigint id PK
         bigint account_id FK,UK
         varchar ticket_hash UK
+    }
+    registration_requests {
+        bigint id PK
+        varchar username
+        varchar province
+        varchar status
+        bigint reviewed_by FK
     }
     drafts {
         bigint id PK

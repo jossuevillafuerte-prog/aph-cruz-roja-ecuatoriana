@@ -1,6 +1,6 @@
 # Diccionario físico MySQL
 
-Verificado el 17 de noviembre de 2026 y actualizado el 25 de noviembre de 2026 (atenciones: `solicitud`, `fecha` e índices; tabla `drafts`) contra migraciones y metadatos de MySQL 8.4. Incluye las **19 tablas** actuales, incluida migrations. Se consultó information_schema sin leer fichas, credenciales ni filas operativas.
+Verificado el 17 de noviembre de 2026 y actualizado el 25 de noviembre de 2026 (atenciones: `solicitud`, `fecha` e índices; tabla `drafts`; el 26 de noviembre, tabla `registration_requests`) contra migraciones y metadatos de MySQL 8.4. Incluye las **20 tablas** actuales, incluida migrations. Se consultó information_schema sin leer fichas, credenciales ni filas operativas.
 
 ## Convenciones
 
@@ -219,6 +219,35 @@ Motor: `InnoDB`. Intercalación: `utf8mb4_unicode_ci`.
 ### Integridad referencial
 
 - `drafts_account_id_foreign`: `account_id` → `accounts.id`; ON DELETE **CASCADE**, ON UPDATE **NO ACTION**.
+
+## `registration_requests`
+
+Solicitudes públicas de cuenta pendientes de revisión por un superadministrador. No contienen contraseñas: la cuenta se crea al aprobar y la contraseña se fija en la activación.
+
+Motor: `InnoDB`. Intercalación: `utf8mb4_unicode_ci`.
+
+| Campo | Tipo MySQL | NULL | Predeterminado | Extra | Significado |
+| --- | --- | --- | --- | --- | --- |
+| `id` | `bigint unsigned` | NO | `—` | auto_increment | Identificador. |
+| `first_name` | `varchar(100)` | NO | `—` | — | Nombres del solicitante. |
+| `last_name` | `varchar(100)` | NO | `—` | — | Apellidos del solicitante. |
+| `username` | `varchar(40)` | NO | `—` | — | Usuario pedido; se comprueba contra `accounts` al aprobar. |
+| `email` | `varchar(254)` | NO | `—` | — | Correo institucional de la provincia o nacional. |
+| `province` | `varchar(60)` | NO | `—` | — | Clave provincial del catálogo. Sin FK. |
+| `status` | `varchar(20)` | NO | `pending` | — | `pending`, `approved` o `rejected`. |
+| `reviewed_by` | `bigint unsigned` | YES | `NULL` | — | Superadministrador que la revisó. |
+| `reviewed_at` | `timestamp` | YES | `NULL` | — | Fecha de revisión. |
+| `created_at` | `timestamp` | YES | `NULL` | — | Fecha de la solicitud. |
+| `updated_at` | `timestamp` | YES | `NULL` | — | Última modificación. |
+
+### Claves e índices
+
+- `PRIMARY`: PK (`id`).
+- `registration_requests_status_created_at_index`: INDEX (`status`, `created_at`).
+
+### Integridad referencial
+
+- `registration_requests_reviewed_by_foreign`: `reviewed_by` → `accounts.id`; ON DELETE **SET NULL**, ON UPDATE **NO ACTION**.
 
 ## `failed_jobs`
 

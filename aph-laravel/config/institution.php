@@ -3,6 +3,8 @@
 return [
     // PENDIENTE: habilitar SMTP/API y una URL HTTPS accesible antes de activar envíos.
     'invitations_enabled' => (bool) env('APH_INVITATIONS_ENABLED', false),
+    // Tablero público de Power BI enlazado desde el inicio de sesión; vacío oculta el botón.
+    'powerbi_url' => env('APH_POWERBI_URL'),
     'domains' => [
         'azuay' => 'azuay.cruzroja.org.ec', 'bolivar' => 'bolivar.cruzroja.org.ec', 'canar' => 'caniar.cruzroja.org.ec', 'carchi' => 'carchi.cruzroja.org.ec',
         'chimborazo' => 'chimborazo.cruzroja.org.ec', 'cotopaxi' => 'cotopaxi.cruzroja.org.ec', 'el-oro' => 'eloro.cruzroja.org.ec', 'esmeraldas' => 'esmeraldas.cruzroja.org.ec',

@@ -6,7 +6,7 @@ Actualizado: 25 de noviembre de 2026, tras las correcciones de la auditoría. Se
 | --- | --- |
 | Arquitectura y flujo MVC/adaptador | arquitectura.md con componentes, secuencia y estados |
 | Lenguajes, frameworks y plugins | dependencias.md y arquitectura.md |
-| MySQL: tablas, campos, tipos, nulos y defaults | base-de-datos/esquema.md: 19 tablas, 121 campos (incluye `solicitud` y `fecha` de atenciones y la tabla `drafts`) |
+| MySQL: tablas, campos, tipos, nulos y defaults | base-de-datos/esquema.md: 20 tablas, 132 campos (incluye `solicitud` y `fecha` de atenciones y las tablas `drafts` y `registration_requests`) |
 | PK, FK, índices y acciones referenciales | Diccionario y base-de-datos/relaciones.md; 8 FK físicas |
 | ERD y mapeo Eloquent | Mermaid y explicación del Query Builder/PDO real, sin relaciones Eloquent ficticias |
 | JSON/catálogos institucionales | base-de-datos/ficha-json.md: A–AD y extensiones |

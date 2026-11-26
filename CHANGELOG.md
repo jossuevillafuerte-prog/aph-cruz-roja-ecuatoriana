@@ -2,6 +2,15 @@
 
 Formato inspirado en Keep a Changelog. El proyecto aún no tiene versiones etiquetadas; se registran entregas por fecha.
 
+## [Sin publicar como versión] — 2026-11-26
+
+Requiere ejecutar `php artisan migrate` (tabla `registration_requests`). Variable nueva opcional: `APH_POWERBI_URL`.
+
+### Añadido
+- Inicio de sesión en dos mitades: collage de fotos a la izquierda (archivos JPG, PNG o WebP en `public/collage`, máximo 5; sin fotos se muestran los pictogramas institucionales) y formulario a la derecha.
+- Botón «Ver tablero Power BI» en el inicio de sesión, visible solo si `APH_POWERBI_URL` tiene una dirección https.
+- Solicitud de cuenta pública (`/register`): nombres, apellidos, provincia, correo institucional de esa provincia o nacional y usuario. Avisa por correo a los superadministradores activos; en Usuarios Nacionales aparece con Aprobar o Rechazar. Aprobar crea el técnico provincial inactivo y envía la activación. La respuesta no revela si el usuario o el correo ya existen.
+
 ## [Sin publicar como versión] — 2026-11-25
 
 Requiere ejecutar `php artisan migrate` (columnas `atenciones.solicitud` y `atenciones.fecha`, índices y tabla `drafts`).
