@@ -27,6 +27,7 @@ Requiere ejecutar `php artisan migrate` (columnas `atenciones.solicitud` y `aten
 - Plantilla `.env.example`: `APP_LOCALE=es`, `LOG_STACK=daily` y `LOG_LEVEL=warning`.
 - Migración de cuentas reintentable y reversiones que no borran datos.
 - Abrir una ficha con datos incompletos ya no produce un error 500.
+- Marcar, quitar o aplicar una ubicación del mapa ahora guarda el borrador y activa el aviso de cambios sin guardar.
 
 ## [Sin publicar como versión] — 2026-11-17
 

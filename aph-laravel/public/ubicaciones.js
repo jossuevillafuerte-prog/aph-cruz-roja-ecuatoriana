@@ -36,6 +36,11 @@ for (const picker of document.querySelectorAll('.location-picker')) {
         useSuggestion.hidden = address === '';
     }
 
+    // Los cambios hechos por código no disparan eventos: se avisa para que el borrador y el aviso de salida los registren.
+    function notifyChange() {
+        field.dispatchEvent(new Event('change', {bubbles: true}));
+    }
+
     function savedPoint() {
         return latitude.value !== '' && longitude.value !== ''
             ? [Number(latitude.value), Number(longitude.value)]
@@ -133,6 +138,7 @@ for (const picker of document.querySelectorAll('.location-picker')) {
             status.textContent = address ? 'Punto marcado. La dirección coincide.' : `Punto marcado. Se conservó el texto escrito. ${problem}`;
         }
         clear.hidden = false;
+        notifyChange();
         searching = false;
         confirm.disabled = useCenter.disabled = cancel.disabled = false;
         marker.dragging.enable();
@@ -146,6 +152,7 @@ for (const picker of document.querySelectorAll('.location-picker')) {
         field.value = suggestion;
         offerSuggestion('');
         status.textContent = 'Dirección sugerida aplicada';
+        notifyChange();
         field.focus();
     });
     clear.addEventListener('click', () => {
@@ -154,6 +161,7 @@ for (const picker of document.querySelectorAll('.location-picker')) {
         if (map) setDraft(null);
         status.textContent = 'Sin punto marcado';
         clear.hidden = true;
+        notifyChange();
         open.focus();
     });
 }
