@@ -55,12 +55,27 @@ class AttentionTraceabilityTest extends TestCase
         return DB::table('cambios')->where('atencion', $id)->orderBy('id')->pluck('motivo')->all();
     }
 
+    /**
+     * Datos mínimos para cerrar: pasos 1 y 2 completos, diagnóstico descrito, destino y médico.
+     *
+     * @return array<string, string>
+     */
+    private function closingData(): array
+    {
+        $resource = DB::table('recursos')->insertGetId(['provincia' => 'azuay', 'numero' => 'AMB-01', 'ubicacion' => 'Base', 'capacidad' => '2', 'combustible' => 'Diésel']);
+        $event = explode(chr(9), file(base_path('legacy/eventos-sngr.tsv'), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)[0])[1];
+
+        return ['C' => array_key_first(json_decode(file_get_contents(base_path('legacy/catalogos.json')), true)['aph']), 'G' => 'Cuenca', 'F' => $event, 'I' => '14:30', 'H' => 'Av. Solano, Cuenca',
+            'recurso_id' => (string) $resource, 'L' => 'Paciente Prueba', 'M' => 'No identificado', 'O' => 'Mujer', 'P' => '30', 'Q' => 'Ecuador', 'R' => 'Estable', 'S' => 'Ninguna',
+            'T' => 'Dolor en hombro tras caída', 'W' => 'Hospital Vicente Corral', 'X' => 'Dra. Prueba'];
+    }
+
     public function test_history_describes_each_real_action(): void
     {
         $this->submit('/?vista=nueva', [])->assertStatus(303);
         $id = DB::table('atenciones')->value('id');
         $this->submit('/?id='.$id, ['version' => '1'])->assertStatus(303);
-        $closing = ['C' => array_key_first(json_decode(file_get_contents(base_path('legacy/catalogos.json')), true)['aph']), 'G' => 'Cuenca'];
+        $closing = $this->closingData();
         $this->submit('/?id='.$id, $closing + ['version' => '2', 'accion' => 'cerrar'])->assertStatus(303);
         $this->submit('/?id='.$id, $closing + ['version' => '3', 'accion' => 'corregir', 'motivo' => ''])->assertStatus(422);
         $this->submit('/?id='.$id, $closing + ['version' => '3', 'accion' => 'corregir', 'motivo' => '0'])->assertStatus(303);
@@ -69,7 +84,10 @@ class AttentionTraceabilityTest extends TestCase
         $this->submit('/?vista=nueva', $closing + ['accion' => 'cerrar', 'K' => 'HOJA-2'])->assertStatus(303);
         $this->assertSame(['Creación y cierre de atención'], $this->reasons((int) DB::table('atenciones')->max('id')));
         $this->submit('/?vista=nueva', ['accion' => 'cerrar', 'K' => 'HOJA-3'])->assertStatus(422);
+        $this->submit('/?vista=nueva', ['X' => ''] + $closing + ['accion' => 'cerrar', 'K' => 'HOJA-4'])->assertStatus(422)->assertSee('Completa «Médico de recepción».', false);
         $this->assertDatabaseCount('atenciones', 2);
+        $this->submit('/?vista=nueva', ['X' => '', 'T' => ''] + $closing + ['K' => 'HOJA-5'])->assertStatus(303);
+        $this->assertDatabaseCount('atenciones', 3);
     }
 
     public function test_saving_preserves_unknown_data_and_records_resource_type_changes(): void

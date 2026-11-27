@@ -14,6 +14,7 @@ const FIELDS = [
     'U' => 'CIE_10', 'V' => 'Descripcion_Diagnostico_Codigo_CIE_10', 'W' => 'Localidad_destino',
     'X' => 'Nombres_medico_recepcion_paciente', 'Y' => 'Responsable', 'Z' => 'km_salida',
     'AA' => 'km_llegada', 'AB' => 'combustible_salida', 'AC' => 'combustible_llegada', 'AD' => 'Observaciones',
+    'AE' => 'Zona_afectada',
 ];
 const DERIVED = ['A', 'D', 'E', 'V'];
 const FIELD_LABELS = [
@@ -23,11 +24,34 @@ const FIELD_LABELS = [
     'R' => 'Condición', 'S' => 'Discapacidad', 'T' => 'Diagnóstico descrito', 'U' => 'Código CIE-10',
     'W' => 'Localidad de destino', 'X' => 'Médico de recepción', 'Y' => 'Responsable', 'Z' => 'Kilometraje de salida',
     'AA' => 'Kilometraje de llegada', 'AB' => 'Combustible de salida', 'AC' => 'Combustible de llegada', 'AD' => 'Observaciones',
+    'AE' => 'Zona afectada',
 ];
 const CLOSING_FIELDS = ['B', 'C', 'G', 'Y'];
+// Obligatorios al cerrar una atención nueva o pendiente: pasos 1 y 2 completos, diagnóstico descrito, destino y médico.
+// El número de documento se exige aparte, salvo paciente no identificado. Las correcciones usan CLOSING_FIELDS.
+const REQUIRED_TO_CLOSE = ['K', 'B', 'I', 'C', 'F', 'G', 'H', 'J', 'L', 'M', 'O', 'P', 'Q', 'R', 'S', 'T', 'W', 'X', 'Y'];
 const DASHBOARD_FIELDS = ['B', 'D', 'F', 'G', 'K', 'M', 'O', 'P', 'Q', 'R', 'S', 'J', 'Z', 'AA', 'evento_lat', 'evento_lon', 'destino_lat', 'destino_lon', 'recurso_tipo'];
 const DASHBOARD_LIMIT = 10000;
 const ATTENTIONS_PER_PAGE = 30;
+/**
+ * Zonas del mapa corporal: rango CIE-10 de traumatismos (capítulo XIX) y códigos frecuentes que se sugieren.
+ *
+ * @var array<string, array{0: ?string, 1: ?string, 2: list<string>}>
+ */
+const BODY_ZONES = [
+    'Cabeza' => ['S00', 'S09', ['S060', 'S010', 'S020']],
+    'Cuello' => ['S10', 'S19', ['S134', 'S119']],
+    'Tórax' => ['S20', 'S29', ['S223', 'S202', 'S270']],
+    'Abdomen, espalda baja y pelvis' => ['S30', 'S39', ['S301', 'S360', 'S325']],
+    'Hombro y brazo' => ['S40', 'S49', ['S420', 'S430']],
+    'Codo y antebrazo' => ['S50', 'S59', ['S525', 'S500']],
+    'Muñeca y mano' => ['S60', 'S69', ['S619', 'S626']],
+    'Cadera y muslo' => ['S70', 'S79', ['S720', 'S701']],
+    'Rodilla y pierna' => ['S80', 'S89', ['S822', 'S800']],
+    'Tobillo y pie' => ['S90', 'S99', ['S934', 'S923']],
+    'Varias regiones' => ['T00', 'T07', ['T009']],
+    'Sin zona (clínico)' => [null, null, ['R509', 'R104', 'J960', 'E162']],
+];
 const LOCATIONS = ['evento' => 'Ubicación del evento', 'destino' => 'Ubicación del destino'];
 
 function fieldLabel(string $key): string
@@ -93,6 +117,37 @@ function provinces(): array
     return json_decode(file_get_contents(__DIR__.'/provincias.json'), true, 512, JSON_THROW_ON_ERROR);
 }
 
+/**
+ * Sugerencias por zona con la descripción oficial del listado CIE-10.
+ *
+ * @return array<string, array{from: ?string, to: ?string, range: ?string, codes: list<array{0: string, 1: string}>}>
+ */
+function bodyZoneSuggestions(): array
+{
+    $byCode = array_column(diagnoses(), null, 'codigo');
+    $zones = [];
+    foreach (BODY_ZONES as $zone => [$from, $to, $codes]) {
+        $zones[$zone] = [
+            'from' => $from,
+            'to' => $to,
+            'range' => $from ? $from.'–'.$to : null,
+            'codes' => array_values(array_map(static fn (string $code): array => [$byCode[$code]['visible'], $byCode[$code]['descripcion']], array_filter($codes, static fn (string $code): bool => isset($byCode[$code])))),
+        ];
+    }
+
+    return $zones;
+}
+
+/**
+ * Indica si un código CIE-10 (sin punto) cae en el rango de la zona.
+ */
+function inBodyZone(string $code, string $zone): bool
+{
+    [$from, $to] = BODY_ZONES[$zone] ?? [null, null];
+
+    return $from !== null && strcmp(substr($code, 0, 3), $from) >= 0 && strcmp(substr($code, 0, 3), $to) <= 0;
+}
+
 function diagnoses(): array
 {
     return json_decode(file_get_contents(__DIR__.'/cie10-oms-2019.json'), true, 512, JSON_THROW_ON_ERROR);
@@ -127,7 +182,7 @@ function catalog(array $province): array
     return $catalog;
 }
 
-function validate(array $input, array $catalog, bool $closed, array $previous = []): array
+function validate(array $input, array $catalog, bool $closed, array $previous = [], bool $closing = false): array
 {
     $data = array_fill_keys(array_keys(FIELDS), '');
     $errors = [];
@@ -137,7 +192,7 @@ function validate(array $input, array $catalog, bool $closed, array $previous = 
             addFieldError($errors, $key, fieldLabel($key).': supera los 4000 caracteres admitidos.');
         }
     }
-    foreach ($closed ? CLOSING_FIELDS : ['B'] as $key) {
+    foreach ($closed ? ($closing ? REQUIRED_TO_CLOSE : CLOSING_FIELDS) : ['B'] as $key) {
         if ($data[$key] === '') {
             addFieldError($errors, $key, 'Completa «'.fieldLabel($key).'».');
         }
@@ -203,6 +258,9 @@ function validate(array $input, array $catalog, bool $closed, array $previous = 
         } elseif ($data['V'] === '') {
             addFieldError($errors, 'U', 'Selecciona un código CIE-10 de la lista.');
         }
+    }
+    if ($data['AE'] !== '' && ! isset(BODY_ZONES[$data['AE']])) {
+        addFieldError($errors, 'AE', 'Selecciona una zona afectada de la lista.');
     }
 
     return [$data, $errors];

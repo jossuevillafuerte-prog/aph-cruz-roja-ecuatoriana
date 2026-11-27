@@ -21,17 +21,19 @@ Avatar: JPG, PNG o WebP de hasta 1 MB y 2048 píxeles por lado. El acceso Seguri
 
 ## Crear una atención
 
+La ficha tiene cuatro pasos. La barra superior permite ir a cualquiera sin perder lo escrito, y cada botón cambia de color: **verde** con todos los datos obligatorios del paso, **amarillo** con parte de ellos y **rojo** sin ninguno o con datos por revisar. Los campos con asterisco rojo (*) son obligatorios para cerrar. La barra inferior indica qué falta y tiene Anterior, Guardar pendiente y Siguiente; Cerrar atención se resalta en el último paso.
+
 1. Entre en Atenciones y seleccione Nueva atención. El superadministrador debe elegir la provincia cuando el sistema lo solicite.
-2. Ingrese fecha y datos disponibles. El número visible de referencia es **Hoja de atención**; conserve ceros y letras cuando correspondan. Puede haber números repetidos: compruebe fecha y ficha antes de editar.
-3. Seleccione código APH, evento o causa y cantón en los catálogos. Busque CIE-10 por código o descripción y seleccione el resultado. No escriba un código inventado.
-4. Seleccione el recurso despachado. Si falta, agréguelo primero en Recursos de la misma provincia. El responsable se registra automáticamente desde la cuenta.
-5. Para dirección del evento y localidad de destino, abra el botón de mapa, coloque el pin y confirme. Si ya escribió una dirección, el sistema la conserva y ofrece «Usar dirección sugerida». Se toma una dirección de referencia. Verifique que corresponda al lugar; los mapas no son evidencia de precisión ni reemplazan referencias operativas.
-6. Registre kilometrajes de salida y llegada; la distancia es llegada menos salida. No confundir kilometraje del odómetro con distancia estimada del mapa. Combustibles se seleccionan en desplegables.
-7. Use Guardar para dejar Pendiente (atajo Ctrl+S, o Cmd+S en Mac), o Cerrar cuando se cumplan los requisitos mostrados. Corregir un campo inválido no sustituye la revisión clínica/operativa del registro.
+2. **Evento y despacho.** El primer campo es **Número de hoja de atención**; conserve ceros y letras cuando correspondan. Puede haber números repetidos: compruebe fecha y ficha antes de editar. Complete fecha, hora de llegada, código APH, evento o causa, cantón y recurso despachado. Si falta el recurso, agréguelo primero en Recursos de la misma provincia.
+3. La dirección del evento se marca solo con «Marcar en el mapa»: coloque el pin y confirme. Debajo del botón se muestra la dirección de referencia obtenida; «Quitar punto» la borra. Verifique que corresponda al lugar; los mapas no son evidencia de precisión ni reemplazan referencias operativas. Sin conexión el mapa no carga: guarde como pendiente y marque la ubicación después.
+4. **Paciente.** Nombres, tipo y número de documento, sexo, edad, nacionalidad, condición y discapacidad. Las opciones cortas se eligen con un toque; tocar de nuevo la opción marcada la desmarca.
+5. **Valoración y diagnóstico.** Toque la zona afectada en la silueta (o elíjala en la lista «Zona afectada»; hay botones para «Varias regiones» y «Sin zona (clínico)»). Aparecen códigos CIE-10 frecuentes de esa región; «Buscar en …» abre el listado completo filtrado por la zona. Si escribe primero el código, la zona se marca sola; si la zona marcada no coincide con el código, se muestra un aviso con «Cambiar zona». No escriba un código inventado. Describa el diagnóstico: es obligatorio para cerrar.
+6. **Traslado y cierre.** Marque la localidad de destino en el mapa e ingrese el médico de recepción, kilometrajes de salida y llegada (la distancia es llegada menos salida; no confundir con la distancia del mapa), combustibles y observaciones. El responsable se registra automáticamente desde la cuenta.
+7. Use Guardar pendiente (atajo Ctrl+S, o Cmd+S en Mac) para dejar la ficha Pendiente, o Cerrar atención cuando la barra indique «Lista para cerrar». Si algún dato tiene error, el formulario abre ese paso. Corregir un campo inválido no sustituye la revisión clínica/operativa del registro.
 
 Mientras escribe, el sistema guarda un borrador a los pocos segundos y lo indica bajo el formulario. Si cierra la pestaña o se corta la conexión, al volver a la misma ficha verá «Restaurar borrador» o «Descartar borrador»; el borrador nunca se aplica solo. Es personal, se borra al guardar la ficha y caduca a los 7 días. No reemplaza guardar: un borrador no es una atención registrada.
 
-La fecha es obligatoria al guardar. Al cerrar se requieren fecha, código APH, cantón y responsable, además de coherencia de datos suministrados y número de documento cuando corresponda. No todos los campos son obligatorios. La cédula requiere diez dígitos; esto verifica formato, no identidad ni dígito verificador.
+La fecha es obligatoria al guardar como pendiente. Al cerrar se requieren todos los datos de Evento y despacho y de Paciente, el diagnóstico descrito, la localidad de destino y el médico de recepción, además del número de documento salvo «No identificado» o «Rehusa identificarse». Al corregir una ficha ya cerrada se mantiene la regla anterior: fecha, código APH, cantón y responsable. La cédula requiere diez dígitos; esto verifica formato, no identidad ni dígito verificador.
 
 ## Revisar, corregir y eliminar
 

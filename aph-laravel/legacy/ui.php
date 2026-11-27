@@ -85,3 +85,11 @@ function errorSummary(array $errors, array $linkable): string
 
     return '<div class="errors" role="alert" id="form-errors" tabindex="-1"><h2>Revisa '.(count($errors) === 1 ? 'este dato' : 'estos '.count($errors).' datos').'</h2><ul>'.$items.'</ul></div>';
 }
+
+/**
+ * Asterisco de los campos obligatorios para cerrar la atención.
+ */
+function requiredMark(string $key): string
+{
+    return in_array($key, REQUIRED_TO_CLOSE, true) ? '<span class="required-mark" aria-hidden="true">*</span>' : '';
+}

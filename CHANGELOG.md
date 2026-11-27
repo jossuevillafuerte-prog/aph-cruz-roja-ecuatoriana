@@ -10,6 +10,15 @@ Requiere ejecutar `php artisan migrate` (tabla `registration_requests`). Variabl
 - Inicio de sesión en dos mitades: collage de fotos a la izquierda (archivos JPG, PNG o WebP en `public/collage`, máximo 5; sin fotos se muestran los pictogramas institucionales) y formulario a la derecha.
 - Botón «Ver tablero Power BI» en el inicio de sesión, visible solo si `APH_POWERBI_URL` tiene una dirección https.
 - Solicitud de cuenta pública (`/register`): nombres, apellidos, provincia, correo institucional de esa provincia o nacional y usuario. Avisa por correo a los superadministradores activos; en Usuarios Nacionales aparece con Aprobar o Rechazar. Aprobar crea el técnico provincial inactivo y envía la activación. La respuesta no revela si el usuario o el correo ya existen.
+- Ficha de atención en 4 pasos (Evento y despacho, Paciente, Valoración y diagnóstico, Traslado y cierre). Cada paso se colorea: verde con todos sus datos obligatorios, amarillo con parte, rojo sin ninguno o con errores. Una barra inferior fija resume lo que falta para cerrar.
+- Mapa corporal en el paso de valoración: tocar una zona sugiere códigos CIE-10 frecuentes y filtra el listado por su rango (S00–S99, T00–T07). Elegir primero el código marca la zona; si no coincide, se avisa con «Cambiar zona». Campo nuevo `AE` (Zona afectada) en la ficha, la hoja de impresión y la columna «Zona_afectada» del Excel.
+- Opciones de un toque en lugar de desplegables para tipo de documento, sexo, condición, discapacidad y combustibles.
+
+### Cambiado
+- Cerrar una atención exige los datos de los pasos 1 y 2, el diagnóstico descrito, la localidad de destino y el médico de recepción (y el número de documento salvo paciente no identificado). Guardar pendiente sigue pidiendo solo la fecha; las correcciones de fichas cerradas mantienen la regla anterior (fecha, código APH, cantón).
+- El número de hoja de atención es el primer campo y va destacado.
+- Dirección del evento y localidad de destino se marcan solo en el mapa; «Quitar punto» borra también la dirección.
+- El encabezado queda fijo al desplazarse; en móvil ocupa una sola fila.
 
 ## [Sin publicar como versión] — 2026-11-25
 

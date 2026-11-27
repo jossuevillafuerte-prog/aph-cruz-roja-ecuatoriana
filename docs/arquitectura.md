@@ -87,7 +87,7 @@ sequenceDiagram
 2. Carga recursos y catálogos de ese ámbito. En fichas nuevas el responsable se asigna desde la cuenta, no desde un campo libre. En correcciones se conserva el responsable previo; el editor actual aparece en el historial.
 3. `guardar` conserva Pendiente; `cerrar` valida campos de cierre; una ficha Cerrada se corrige con `corregir` y motivo. No hay flujo de reapertura implementado.
 4. Se valida recurso provincial, datos y coordenadas. Se preservan excepciones explícitas para valores históricos.
-5. En una transacción se inserta o actualiza la ficha, se escribe cambios y se registra el evento de auditoría; si algo falla, no se guarda nada. UPDATE incluye id, provincia, version y eliminado IS NULL. Las claves del JSON fuera de A–AD se conservan y sus cambios quedan en el historial.
+5. En una transacción se inserta o actualiza la ficha, se escribe cambios y se registra el evento de auditoría; si algo falla, no se guarda nada. UPDATE incluye id, provincia, version y eliminado IS NULL. Las claves del JSON fuera de A–AE se conservan y sus cambios quedan en el historial.
    - El motivo por defecto describe la acción: creación, actualización de pendiente o cierre.
    - Cada formulario nuevo lleva un identificador `solicitud` único: un doble envío devuelve la ficha ya creada y, si los datos difieren, se avisa sin descartarlos.
    - Los errores de validación se devuelven por campo: resumen enlazado y enfocable, mensaje junto al control y `aria-invalid`.

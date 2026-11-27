@@ -85,7 +85,7 @@ Motor: `InnoDB`. Intercalación: `utf8mb4_unicode_ci`.
 | `id` | `bigint unsigned` | NO | `—` | auto_increment | Identificador; revisar PK y AUTO_INCREMENT en esta tabla. |
 | `version` | `int` | NO | `—` | — | Versión optimista de ficha; empieza en 1 en la aplicación. |
 | `estado` | `varchar(20)` | NO | `—` | — | Pendiente o Cerrada por aplicación; sin ENUM/CHECK físico. |
-| `datos` | `json` | NO | `—` | — | Objeto JSON: A–AD, coordenadas y recurso_tipo; ver diccionario JSON. |
+| `datos` | `json` | NO | `—` | — | Objeto JSON: A–AE, coordenadas y recurso_tipo; ver diccionario JSON. |
 | `provincia` | `varchar(60)` | NO | `—` | — | Clave provincial; ver FK o vínculo lógico de esta tabla. |
 | `recurso_id` | `bigint unsigned` | YES | `NULL` | — | Unidad asignada; puede ser NULL en datos históricos. |
 | `responsable_id` | `bigint unsigned` | YES | `NULL` | — | Operador responsable vinculado; puede ser NULL históricamente. |

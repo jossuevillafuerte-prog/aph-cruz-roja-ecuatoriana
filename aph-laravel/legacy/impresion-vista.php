@@ -1,9 +1,9 @@
 <?php
-$printLabels = ['K' => 'Número de hoja', 'B' => 'Fecha de atención', 'I' => 'Hora de llegada', 'F' => 'Evento o causa', 'G' => 'Cantón', 'C' => 'Código APH', 'D' => 'Tipo de atención', 'E' => 'Categoría de atención', 'L' => 'Nombres y apellidos del paciente', 'M' => 'Tipo de identificación', 'N' => 'Número de identificación', 'O' => 'Sexo', 'P' => 'Edad', 'Q' => 'Nacionalidad', 'R' => 'Condición de salud', 'S' => 'Discapacidad', 'T' => 'Diagnóstico descrito', 'U' => 'Código CIE-10', 'V' => 'Descripción CIE-10', 'J' => 'Recurso despachado', 'H' => 'Dirección del evento', 'W' => 'Localidad de destino', 'X' => 'Médico receptor', 'Z' => 'Kilometraje de salida', 'AA' => 'Kilometraje de llegada', 'AB' => 'Combustible de salida', 'AC' => 'Combustible de llegada', 'Y' => 'Responsable', 'AD' => 'Observaciones'];
+$printLabels = ['K' => 'Número de hoja', 'B' => 'Fecha de atención', 'I' => 'Hora de llegada', 'F' => 'Evento o causa', 'G' => 'Cantón', 'C' => 'Código APH', 'D' => 'Tipo de atención', 'E' => 'Categoría de atención', 'L' => 'Nombres y apellidos del paciente', 'M' => 'Tipo de identificación', 'N' => 'Número de identificación', 'O' => 'Sexo', 'P' => 'Edad', 'Q' => 'Nacionalidad', 'R' => 'Condición de salud', 'S' => 'Discapacidad', 'T' => 'Diagnóstico descrito', 'U' => 'Código CIE-10', 'V' => 'Descripción CIE-10', 'J' => 'Recurso despachado', 'H' => 'Dirección del evento', 'W' => 'Localidad de destino', 'X' => 'Médico receptor', 'Z' => 'Kilometraje de salida', 'AA' => 'Kilometraje de llegada', 'AB' => 'Combustible de salida', 'AC' => 'Combustible de llegada', 'Y' => 'Responsable', 'AD' => 'Observaciones', 'AE' => 'Zona afectada'];
 $sheetNumber = $data['K'] ?: 'Sin número de hoja';
 $printGroups = [
     'Datos del servicio' => ['K', 'B', 'I', 'F', 'G', 'C', 'D', 'E'],
-    'Paciente y atención' => ['L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V'],
+    'Paciente y atención' => ['L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'AE', 'T', 'U', 'V'],
     'Despacho y traslado' => ['J', 'H', 'W', 'X', 'Z', 'AA', 'AB', 'AC'],
     'Responsabilidad y observaciones' => ['Y', 'AD'],
 ];

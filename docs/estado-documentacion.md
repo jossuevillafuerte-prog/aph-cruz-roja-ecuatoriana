@@ -9,7 +9,7 @@ Actualizado: 25 de noviembre de 2026, tras las correcciones de la auditoría. Se
 | MySQL: tablas, campos, tipos, nulos y defaults | base-de-datos/esquema.md: 20 tablas, 132 campos (incluye `solicitud` y `fecha` de atenciones y las tablas `drafts` y `registration_requests`) |
 | PK, FK, índices y acciones referenciales | Diccionario y base-de-datos/relaciones.md; 8 FK físicas |
 | ERD y mapeo Eloquent | Mermaid y explicación del Query Builder/PDO real, sin relaciones Eloquent ficticias |
-| JSON/catálogos institucionales | base-de-datos/ficha-json.md: A–AD y extensiones |
+| JSON/catálogos institucionales | base-de-datos/ficha-json.md: A–AE y extensiones |
 | Rutas, middleware y permisos | rutas-y-permisos.md, inventario obtenido de Artisan |
 | Eventos, colas y tareas | Arquitectura e instalación indican ausencia de Jobs de negocio y correo síncrono |
 | Seguridad vigente | seguridad.md, roles y límites documentados |

@@ -1,6 +1,6 @@
 # Diccionario del JSON de la ficha
 
-`atenciones.datos` es JSON nativo; los campos A–AD se guardan normalmente como cadenas, incluidos números y fechas. Ausencia habitual: cadena vacía, no NULL. El formulario limita entradas no derivadas a 4000 bytes. No se ha convertido el Excel a una tabla SQL por columna.
+`atenciones.datos` es JSON nativo; los campos A–AE se guardan normalmente como cadenas, incluidos números y fechas. Ausencia habitual: cadena vacía, no NULL. El formulario limita entradas no derivadas a 4000 bytes. No se ha convertido el Excel a una tabla SQL por columna.
 
 | Clave | Encabezado institucional | Regla y significado |
 | --- | --- | --- |
@@ -34,6 +34,7 @@
 | `AB` | combustible_salida | Nivel de combustible de salida del catálogo. |
 | `AC` | combustible_llegada | Nivel de combustible de llegada del catálogo. |
 | `AD` | Observaciones | Observaciones de atención. |
+| `AE` | Zona_afectada | Zona del mapa corporal (desde el 26/11/2026): una de las 12 zonas de `BODY_ZONES` en `legacy/modelo.php`, o vacía. Las fichas anteriores no la tienen. Sale en la hoja de impresión y como última columna del Excel. |
 
 ## Extensiones del formulario
 

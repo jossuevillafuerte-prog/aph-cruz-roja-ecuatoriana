@@ -5,6 +5,7 @@ for (const picker of document.querySelectorAll('.location-picker')) {
     const open = picker.querySelector('.map-open');
     const cancel = picker.querySelector('.map-cancel');
     const field = document.getElementById(picker.dataset.field);
+    const address = document.getElementById(picker.dataset.field + '-address');
     const form = picker.closest('form');
     const token = form.querySelector('input[name="_token"]').value;
     const province = form.querySelector('input[name="_province"]')?.value ?? '';
@@ -38,6 +39,10 @@ for (const picker of document.querySelectorAll('.location-picker')) {
 
     // Los cambios hechos por código no disparan eventos: se avisa para que el borrador y el aviso de salida los registren.
     function notifyChange() {
+        if (address) {
+            address.textContent = field.value.trim() || 'Sin ubicación marcada';
+            address.classList.toggle('is-empty', field.value.trim() === '');
+        }
         field.dispatchEvent(new Event('change', {bubbles: true}));
     }
 
@@ -69,7 +74,7 @@ for (const picker of document.querySelectorAll('.location-picker')) {
         dialog.showModal();
         if (!window.L) {
             useCenter.disabled = true;
-            mapStatus.textContent = 'El mapa no está disponible. Puedes guardar la dirección escrita.';
+            mapStatus.textContent = 'El mapa no está disponible. Guarda la ficha como pendiente y marca la ubicación cuando vuelva la conexión.';
             return;
         }
         const point = savedPoint();
@@ -78,7 +83,7 @@ for (const picker of document.querySelectorAll('.location-picker')) {
             const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
             map = L.map(picker.querySelector('.location-map'), {zoomAnimation: !still, fadeAnimation: !still, markerZoomAnimation: !still}).setView(point ?? center, point ? 15 : 7);
             L.tileLayer(picker.dataset.tiles, {attribution: picker.dataset.attribution, maxZoom: 19})
-                .on('tileerror', () => { mapStatus.textContent = 'Parte del mapa no cargó. También puedes usar la dirección escrita.'; })
+                .on('tileerror', () => { mapStatus.textContent = 'Parte del mapa no cargó. Espera unos segundos o mueve el mapa para reintentar.'; })
                 .addTo(map);
             map.on('click', event => { if (!searching) setDraft(event.latlng); });
         } else if (point) {
@@ -153,13 +158,15 @@ for (const picker of document.querySelectorAll('.location-picker')) {
         offerSuggestion('');
         status.textContent = 'Dirección sugerida aplicada';
         notifyChange();
-        field.focus();
+        open.focus();
     });
     clear.addEventListener('click', () => {
         latitude.value = longitude.value = '';
+        // La dirección solo se marca en el mapa: quitar el punto también la quita.
+        field.value = automaticText = '';
         offerSuggestion('');
         if (map) setDraft(null);
-        status.textContent = 'Sin punto marcado';
+        status.textContent = 'Punto quitado';
         clear.hidden = true;
         notifyChange();
         open.focus();

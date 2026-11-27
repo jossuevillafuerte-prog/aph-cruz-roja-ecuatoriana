@@ -89,7 +89,12 @@
     restore.addEventListener('click', () => {
         for (const [name, value] of Object.entries(saved.fields)) {
             const element = form.elements.namedItem(name);
-            if (!element || element instanceof RadioNodeList) continue;
+            if (!element) continue;
+            if (element instanceof RadioNodeList) {
+                element.value = value;
+                element[0]?.dispatchEvent(new Event('change', {bubbles: true}));
+                continue;
+            }
             if (element.type === 'checkbox') element.checked = true;
             else element.value = value;
             element.dispatchEvent(new Event('change', {bubbles: true}));

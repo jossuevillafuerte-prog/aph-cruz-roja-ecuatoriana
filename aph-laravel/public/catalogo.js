@@ -1,6 +1,14 @@
 const search = document.querySelector('#cie-search');
 
 
+// El encabezado queda fijo arriba: su alto real ubica debajo la barra de pasos de la ficha.
+const appHeader = document.querySelector('.app-header');
+if (appHeader) {
+    const setHeaderHeight = () => document.documentElement.style.setProperty('--app-header-height', appHeader.offsetHeight + 'px');
+    new ResizeObserver(setHeaderHeight).observe(appHeader);
+    setHeaderHeight();
+}
+
 const menu = document.querySelector('#app-menu');
 if (menu) {
     const open = document.querySelector('#menu-open');
@@ -61,11 +69,12 @@ if (search) {
         timer = setTimeout(async () => {
             request = new AbortController();
             try {
-                const response = await fetch('?vista=cie&pagina=' + page + '&q=' + encodeURIComponent(term), {signal: request.signal});
+                const zone = picker.dataset.zone ?? '';
+                const response = await fetch('?vista=cie&pagina=' + page + '&q=' + encodeURIComponent(term) + (zone ? '&zona=' + encodeURIComponent(zone) : ''), {signal: request.signal});
                 if (!response.ok) throw new Error('Búsqueda no disponible');
                 const {items, total} = await response.json();
                 const first = (page - 1) * 50 + 1;
-                status.textContent = total ? `${first}–${first + items.length - 1} de ${total} códigos` : 'Sin coincidencias';
+                status.textContent = (total ? `${first}–${first + items.length - 1} de ${total} códigos` : 'Sin coincidencias') + (zone ? ` en ${zone}` : '');
                 previous.disabled = page === 1;
                 next.disabled = page * 50 >= total;
                 for (const entry of items) {
@@ -74,6 +83,7 @@ if (search) {
                     option.textContent = entry.visible + ' · ' + entry.descripcion;
                     option.addEventListener('click', () => {
                         code.value = entry.visible;
+                        code.dispatchEvent(new Event('change', {bubbles: true}));
                         description.textContent = entry.descripcion;
                         picker.open = false;
                         code.focus();
@@ -85,19 +95,20 @@ if (search) {
             }
         }, 200);
     }
-    picker.addEventListener('toggle', () => { if (picker.open) load(); });
+    // Al cerrarse, el listado deja de filtrar por la zona elegida en el mapa corporal.
+    picker.addEventListener('toggle', () => { if (picker.open) { page = 1; load(); } else { delete picker.dataset.zone; } });
     search.addEventListener('input', () => { page = 1; load(); });
     previous.addEventListener('click', () => { page--; load(); });
     next.addEventListener('click', () => { page++; load(); });
 }
 
-const documentType = document.querySelector('#f-M');
-if (documentType) {
+const documentChoices = [...document.querySelectorAll('input[name="M"]')];
+if (documentChoices.length) {
     const number = document.querySelector('#f-N');
     const help = document.querySelector('#documento-ayuda');
     const label = document.querySelector('label[for="f-N"]');
     function describeDocument() {
-        const type = documentType.value;
+        const type = documentChoices.find(choice => choice.checked)?.value ?? '';
         number.inputMode = type === 'Cédula de identidad' ? 'numeric' : 'text';
         label.textContent = ({
             'Cédula de identidad': 'Número de cédula',
@@ -109,6 +120,6 @@ if (documentType) {
             ['Pasaporte', 'Visado', 'Carné de refugiado'].includes(type) ? 'Ingresa el número tal como aparece en el documento.' :
             'Deja el número en blanco si no se dispone de un documento.';
     }
-    documentType.addEventListener('change', describeDocument);
+    documentChoices.forEach(choice => choice.addEventListener('change', describeDocument));
     describeDocument();
 }

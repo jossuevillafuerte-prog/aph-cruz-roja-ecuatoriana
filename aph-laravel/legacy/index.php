@@ -65,7 +65,11 @@ if ($view === 'cie') {
     $total = 0;
     if (strlen($term) <= 100) {
         $needle = searchText($term);
+        $zone = is_string($_GET['zona'] ?? null) && isset(BODY_ZONES[$_GET['zona']]) ? $_GET['zona'] : '';
         foreach (diagnoses() as $entry) {
+            if ($zone !== '' && ! inBodyZone($entry['codigo'], $zone)) {
+                continue;
+            }
             if ($needle === '' || str_contains(searchText($entry['codigo'].' '.$entry['visible'].' '.$entry['descripcion']), $needle)) {
                 if ($total++ < $offset || count($matches) >= 50) {
                     continue;
@@ -213,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($selected === '' && ! empty($_POST['conservar_recurso']) && empty($record['recurso_id'])) {
             $posted['J'] = $savedData['J'] ?? '';
         }
-        [$data, $errors] = validate($posted, $catalog, $nextState === 'Cerrada', $data);
+        [$data, $errors] = validate($posted, $catalog, $nextState === 'Cerrada', $data, $action === 'cerrar');
         if ($resourceId !== null) {
             $data['recurso_tipo'] = ($record['recurso_id'] ?? null) === $resourceId
                 ? ($savedData['recurso_tipo'] ?? $resources[$resourceId]['tipo']) : $resources[$resourceId]['tipo'];
@@ -253,11 +257,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         aphStatus(422);
     }
 }
+// Pasos del formulario: el orden sigue el de la atención en territorio.
 $groups = [
-    'Evento y despacho' => ['B', 'C', 'F', 'G', 'H', 'I', 'J', 'K'],
-    'Paciente y diagnóstico' => ['L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U'],
-    'Destino y operación' => ['W', 'X', 'Z', 'AA', 'AB', 'AC', 'AD'],
+    'Evento y despacho' => ['K', 'B', 'I', 'C', 'F', 'G', 'H', 'J'],
+    'Paciente' => ['L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S'],
+    'Valoración y diagnóstico' => ['AE', 'U', 'T'],
+    'Traslado y cierre' => ['W', 'X', 'Z', 'AA', 'AB', 'AC', 'AD'],
 ];
+$stepIntros = [
+    'Evento y despacho' => 'Cuándo y dónde ocurrió, y qué recurso acudió.',
+    'Paciente' => 'Identificación y condición de la persona atendida.',
+    'Valoración y diagnóstico' => 'Marca la zona afectada y elige el código CIE-10.',
+    'Traslado y cierre' => 'Destino, médico que recibe y datos de la unidad.',
+];
+// Listas cortas: se eligen con un toque en lugar de abrir un desplegable.
+$choiceKeys = ['M', 'O', 'R', 'S', 'AB', 'AC'];
 $filter = $_GET['estado'] ?? '';
 $filter = in_array($filter, ['Pendiente', 'Cerrada'], true) ? $filter : '';
 $statusClasses = ['Pendiente' => 'pending', 'Cerrada' => 'closed'];
@@ -289,6 +303,7 @@ if ($isAdmin) {
         <link rel="stylesheet" href="<?= h(Asset::url('leaflet/leaflet.css')) ?>">
         <script src="<?= h(Asset::url('leaflet/leaflet.js')) ?>" defer></script>
     <?php } ?>
+    <?php if ($editing && ! $deleteView && ! $printView) { ?><script src="<?= h(Asset::url('mapa-corporal.js')) ?>" defer></script><script src="<?= h(Asset::url('form-steps.js')) ?>" defer></script><?php } ?>
     <?php if ($dashboardView) { ?>
         <script src="<?= h(Asset::url('dashboard-mapas.js')) ?>" defer></script>
     <?php } elseif ($editing && ! $deleteView && ! $printView) { ?>
@@ -439,26 +454,48 @@ if ($isAdmin) {
     <span class="badge status <?= $statusClasses[$record['estado'] ?? ''] ?? 'all' ?>"><?= h($record['estado'] ?? 'Sin guardar') ?></span></div>
     <?php if (isset($_GET['guardado']) && ! $errors) { ?><p class="success" role="status">Atención guardada.</p><?php } ?>
     <?= errorSummary($errors, [...array_merge(...array_values($groups)), 'motivo']) ?>
-    <p>Para guardar un pendiente basta la fecha. Para cerrar, completa también el código APH y el cantón.</p>
     <?php
     $draftKey = $record ? AttentionDrafts::recordKey((int) $record['id']) : AttentionDrafts::newKey($province);
     $draft = $_SERVER['REQUEST_METHOD'] === 'POST' ? null : AttentionDrafts::find((int) $user->id, $draftKey);
     ?>
-    <form method="post" data-draft-key="<?= h($draftKey) ?>" data-draft-version="<?= h($formVersion) ?>"<?= $draft ? ' data-draft="'.h(json_encode(['fields' => $draft['fields'], 'version' => $draft['version'], 'saved_at' => date('d/m/Y H:i', strtotime($draft['saved_at']))], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)).'"' : '' ?>>
+    <form method="post" data-closing="<?= h(json_encode(array_combine($closingKeys = array_values(array_diff(REQUIRED_TO_CLOSE, ['Y'])), array_map('fieldLabel', $closingKeys)) + ['N' => fieldLabel('N')], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)) ?>" data-draft-key="<?= h($draftKey) ?>" data-draft-version="<?= h($formVersion) ?>"<?= $draft ? ' data-draft="'.h(json_encode(['fields' => $draft['fields'], 'version' => $draft['version'], 'saved_at' => date('d/m/Y H:i', strtotime($draft['saved_at']))], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)).'"' : '' ?>>
         <input type="hidden" name="_token" value="<?= h($_SESSION['token']) ?>">
         <input type="hidden" name="version" value="<?= h($formVersion) ?>">
         <?php if (! $record) { ?><input type="hidden" name="solicitud" value="<?= h($requestId) ?>"><?php } ?>
-        <?php foreach ($groups as $title => $keys) { ?>
-            <fieldset class="card"><legend><?= h($title) ?></legend><div class="grid">
+        <nav class="step-nav" aria-label="Pasos de la atención" hidden>
+            <?php foreach (array_keys($groups) as $index => $title) { ?>
+                <button type="button" data-step-target="<?= $index ?>"><span class="step-number"><?= $index + 1 ?></span><span class="step-text"><strong><?= h($title) ?></strong><small class="step-state"></small></span></button>
+            <?php } ?>
+        </nav>
+        <p class="step-legend" hidden><span class="complete">Completo</span><span class="partial">Parcial</span><span class="empty">Sin completar</span></p>
+        <?php foreach (array_values(array_keys($groups)) as $stepIndex => $title) {
+            $keys = $groups[$title];
+            if ($title === 'Valoración y diagnóstico') {
+                require __DIR__.'/valoracion.php';
+
+                continue;
+            } ?>
+            <fieldset class="card form-step" data-step="<?= $stepIndex ?>" id="paso-<?= $stepIndex + 1 ?>"><legend><?= $stepIndex + 1 ?>. <?= h($title) ?></legend><p class="step-intro"><?= h($stepIntros[$title]) ?> <span class="required-note">Los campos con <span class="required-mark" aria-hidden="true">*</span> son obligatorios para cerrar.</span></p><div class="grid">
             <?php foreach ($keys as $key) {
                 $label = fieldLabel($key);
                 $value = $data[$key] ?? '';
                 $type = match ($key) {
                     'B' => 'date', 'I' => 'time', 'P','Z','AA' => 'number', default => 'text'
                 };
+                if (in_array($key, $choiceKeys, true)) { ?>
+                    <fieldset class="field choice-field<?= in_array($key, ['S', 'AB', 'AC', 'M'], true) ? ' choice-wide' : '' ?>"><legend><?= h($label) ?><?= requiredMark($key) ?></legend><div class="choice-chips">
+                    <?php foreach ($catalog['lists'][$key] as $optionIndex => $option) { ?>
+                        <label class="choice"><input type="radio" id="<?= $optionIndex === 0 ? 'f-'.$key : 'f-'.$key.'-'.$optionIndex ?>" name="<?= $key ?>" value="<?= h($option) ?>" <?= $option === $value ? 'checked' : '' ?><?= fieldErrorAttributes($errors, $key) ?>><span><?= h(str_replace('_', ' ', $option)) ?></span></label>
+                    <?php } ?>
+                    </div><?= fieldErrorMessage($errors, $key) ?></fieldset>
+                    <?php continue;
+                }
                 ?>
-                <div class="field"><label for="f-<?= $key ?>"><?= h($label) ?></label>
-                <?php if ($key === 'J') { ?>
+                <div class="field"><?php if (in_array($key, ['H', 'W'], true)) { ?><span class="field-label"><?= h($label) ?><?= requiredMark($key) ?></span><?php } else { ?><label for="f-<?= $key ?>"><?= h($label) ?><?= requiredMark($key) ?></label><?php } ?>
+                <?php if (in_array($key, ['H', 'W'], true)) { ?>
+                    <input type="hidden" id="f-<?= $key ?>" name="<?= $key ?>" value="<?= h($value) ?>"<?= fieldErrorAttributes($errors, $key) ?>>
+                    <p class="location-address<?= $value === '' ? ' is-empty' : '' ?>" id="f-<?= $key ?>-address"><?= h($value !== '' ? $value : 'Sin ubicación marcada') ?></p>
+                <?php } elseif ($key === 'J') { ?>
                     <select id="f-J" name="recurso_id"<?= fieldErrorAttributes($errors, 'J') ?>>
                         <option value="">Selecciona un recurso</option>
                         <?php foreach ($resources as $item) { ?>
@@ -531,7 +568,7 @@ if ($isAdmin) {
                         data-islands="<?= $province === 'galapagos' ? '1' : '0' ?>">
                         <input type="hidden" name="<?= $point ?>_lat" value="<?= h((string) $latitude) ?>">
                         <input type="hidden" name="<?= $point ?>_lon" value="<?= h((string) $longitude) ?>">
-                        <small class="location-status" role="status"><?= $latitude !== null && $longitude !== null ? 'Punto de referencia marcado' : 'Sin punto marcado' ?></small>
+                        <small class="location-status" role="status"><?= $latitude !== null && $longitude !== null ? 'Punto de referencia marcado' : '' ?></small>
                         <button type="button" class="map-open"><?= icon('pin') ?> Marcar en el mapa</button>
                         <dialog aria-labelledby="map-title-<?= $point ?>">
                             <h2 id="map-title-<?= $point ?>"><?= h(LOCATIONS[$point]) ?></h2>
@@ -558,7 +595,10 @@ if ($isAdmin) {
             <?php } ?>
             </div></fieldset>
         <?php } ?>
-        <div class="actions">
+        <div class="actions form-bar">
+        <p class="closing-status" aria-live="polite"></p>
+        <div class="form-bar-buttons">
+        <button type="button" class="step-prev" hidden><?= icon('back') ?> <span class="step-prev-text">Anterior</span></button>
         <?php if ($closed) { ?>
             <label for="motivo">Motivo de la corrección</label>
             <input id="motivo" name="motivo" maxlength="1000" required value="<?= h($reason) ?>"<?= fieldErrorAttributes($errors, 'motivo') ?>>
@@ -568,6 +608,8 @@ if ($isAdmin) {
             <button name="accion" value="guardar" data-shortcut-save aria-keyshortcuts="Control+S"><?= icon('clock') ?> Guardar pendiente <kbd>Ctrl+S</kbd></button>
             <button class="primary" name="accion" value="cerrar"><?= icon('check') ?> Cerrar atención</button>
         <?php } ?>
+        <button type="button" class="step-next primary" hidden></button>
+        </div>
         </div>
     </form>
     <?php if ($record) {
